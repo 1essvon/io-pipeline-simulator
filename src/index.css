@@ -1,0 +1,49 @@
+
+:root {
+  font-family: Inter, system-ui, sans-serif;
+  color: #051F45;
+  background: #F8F7F4;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+
+  --color-base: #F8F7F4;
+  --color-navy: #051F45;
+  --color-pink: #F2C4CD;
+  --color-white: #FFFFFF;
+  --color-text-muted: #475569;
+  --color-border: #E5E7EB;
+  --color-soft-pink: #FCE7EC;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--color-base);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
