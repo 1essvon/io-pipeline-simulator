@@ -1,6 +1,8 @@
 
 import { useState } from "react";
 import "./App.css";
+import { runSimulation } from "./engine/simulationEngine";
+import type { SimulationResult } from "./algorithms/types";
 
 const algorithms = ["FCFS", "SSTF", "SCAN", "C-SCAN", "LOOK", "C-LOOK"];
 
@@ -8,11 +10,68 @@ function App() {
   const [algorithm, setAlgorithm] = useState("FCFS");
   const [initialHead, setInitialHead] = useState("50");
   const [requests, setRequests] = useState("82, 170, 43, 140, 24, 16, 190");
+  const [simulationResult, setSimulationResult] =
+  useState<SimulationResult | null>(null);
+  const [simulationError, setSimulationError] = useState("");
 
   const requestList = requests
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
+
+  function handleRunSimulation() {
+    setSimulationResult(null);
+    setSimulationError("");
+
+    const head = Number(initialHead);
+    const cylinders = requests.split(",").map((value) => value.trim());
+
+    if (
+      initialHead.trim() === "" ||
+      !Number.isInteger(head) ||
+      head < 0 ||
+      cylinders.length === 0 ||
+      cylinders.some(
+        (value) => value === "" || !Number.isInteger(Number(value)),
+      )
+    ) {
+      setSimulationError(
+        "Periksa kembali posisi awal head dan antrean cylinder.",
+      );
+      return;
+    }
+
+    const input = {
+      algorithm: algorithm as (typeof algorithms)[number] as
+        | "FCFS"
+        | "SSTF"
+        | "SCAN"
+        | "C-SCAN"
+        | "LOOK"
+        | "C-LOOK",
+      requests: cylinders.map((value, index) => ({
+        id: `R${index + 1}`,
+        cylinder: Number(value),
+        arrivalTime: 0,
+      })),
+      config: {
+        initialHead: head,
+        minCylinder: 0,
+        maxCylinder: 199,
+        direction: "up" as const,
+        serviceTime: 1,
+      },
+    };
+
+    const output = runSimulation(input);
+
+    if (!output.success || !output.result) {
+      setSimulationError(output.errors.join(" "));
+      return;
+    }
+
+    setSimulationResult(output.result);
+  }
 
   return (
     <main className="app-shell">
@@ -155,17 +214,28 @@ function App() {
             <button
               className="primary-button full-width"
               type="button"
-              onClick={() =>
-                window.alert(
-                  "Fitur simulasi belum aktif. Algoritma penjadwalan perlu diintegrasikan terlebih dahulu.",
-                )
-              }
+              onClick={handleRunSimulation}
             >
               Jalankan simulasi <span>→</span>
             </button>
-          </div>
 
-          <div className="panel preview-panel">
+            {simulationError && (
+              <p role="alert" className="helper-text">
+                {simulationError}
+              </p>
+            )}
+
+              {simulationResult && (
+                <div className="notice" role="status">
+                  <p>
+                    Simulasi berhasil. Total pergerakan head:{" "}
+                    {simulationResult.totalHeadMovement} cylinder.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="panel preview-panel">
             <div className="panel-heading">
               <div>
                 <h3>Ringkasan permintaan</h3>
