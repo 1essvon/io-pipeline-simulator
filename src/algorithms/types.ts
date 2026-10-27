@@ -62,3 +62,12 @@ export interface SimulationMetrics {
   throughput: number;
   maxWaitingTime: number;
 }
+
+export interface DiskSchedulingAlgorithm {
+  id: AlgorithmId;
+  name: string;
+  run(
+    requests: DiskRequest[],
+    config: SimulationConfig,
+  ): SimulationResult;
+}
