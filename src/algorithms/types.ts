@@ -1,9 +1,3 @@
-
-/**
- * Tipe data bersama untuk I/O Pipeline Simulator.
- * Digunakan oleh algoritma, simulation engine, dan UI.
- */
-
 export type AlgorithmId =
   | "FCFS"
   | "SSTF"
@@ -41,6 +35,8 @@ export interface SimulationStep {
   cylinder?: number;
   distanceFromPrevious: number;
   elapsedTime: number;
+  serviceStartTime?: number;
+  completionTime?: number;
   eventType: SimulationEventType;
   explanation: string;
 }

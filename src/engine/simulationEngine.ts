@@ -19,9 +19,20 @@ export interface SimulationOutput {
   errors: string[];
 }
 
-/**
- * Memvalidasi input sebelum simulasi dijalankan.
- */
+export type AlgorithmRunner = (
+  requests: DiskRequest[],
+  config: SimulationConfig,
+) => SimulationResult;
+
+const algorithmRegistry = new Map<AlgorithmId, AlgorithmRunner>();
+
+export function registerAlgorithm(
+  id: AlgorithmId,
+  runner: AlgorithmRunner,
+): void {
+  algorithmRegistry.set(id, runner);
+}
+
 export function validateSimulationInput(
   input: SimulationInput,
 ): string[] {
@@ -43,16 +54,34 @@ export function runSimulation(
   const errors = validateSimulationInput(input);
 
   if (errors.length > 0) {
+    return { success: false, errors };
+  }
+
+  const runner = algorithmRegistry.get(input.algorithm);
+
+  if (!runner) {
     return {
       success: false,
-      errors,
+      errors: [`Algoritma ${input.algorithm} belum didaftarkan.`],
     };
   }
 
-  return {
-    success: false,
-    errors: [
-      `Algoritma ${input.algorithm} belum tersedia.`,
-    ],
-  };
+  try {
+    const result = runner(input.requests, input.config);
+
+    return {
+      success: true,
+      result,
+      errors: [],
+    };
+  } catch (error) {
+    return {
+      success: false,
+      errors: [
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan saat menjalankan simulasi.",
+      ],
+    };
+  }
 }
