@@ -3,6 +3,7 @@ import { useState } from "react";
 import "./App.css";
 import { runSimulation } from "./engine/simulationEngine";
 import type { SimulationResult } from "./algorithms/types";
+import { calculateMetrics } from "./engine/metricsEngine";
 
 const algorithms = ["FCFS", "SSTF", "SCAN", "C-SCAN", "LOOK", "C-LOOK"];
 
@@ -12,7 +13,19 @@ function App() {
   const [requests, setRequests] = useState("82, 170, 43, 140, 24, 16, 190");
   const [simulationResult, setSimulationResult] =
   useState<SimulationResult | null>(null);
+  const [completedRequests, setCompletedRequests] = useState<
+  { id: string; cylinder: number; arrivalTime: number }[] | null
+>(null);
   const [simulationError, setSimulationError] = useState("");
+
+  const metrics =
+  simulationResult && completedRequests
+    ? calculateMetrics(
+        completedRequests,
+        simulationResult.steps,
+        simulationResult.totalHeadMovement,
+      )
+    : null;
 
   const requestList = requests
     .split(",")
@@ -21,6 +34,7 @@ function App() {
 
   function handleRunSimulation() {
     setSimulationResult(null);
+    setCompletedRequests(null);
     setSimulationError("");
 
     const head = Number(initialHead);
@@ -71,6 +85,7 @@ function App() {
     }
 
     setSimulationResult(output.result);
+    setCompletedRequests(input.requests);
   }
 
   return (
@@ -299,12 +314,33 @@ function App() {
           </span>
         </section>
 
+        
         <section className="metrics-grid">
           {[
-            ["↔", "Total pergerakan head", "—", "Satuan cylinder"],
-            ["◷", "Total waktu pencarian", "—", "Satuan waktu"],
-            ["⌁", "Rata-rata waktu tunggu", "—", "Satuan waktu"],
-            ["⇧", "Throughput", "—", "Permintaan per satuan waktu"],
+            [
+              "↔",
+              "Total pergerakan head",
+              metrics ? metrics.totalHeadMovement.toFixed(0) : "—",
+              "Satuan cylinder",
+            ],
+            [
+              "◷",
+              "Total waktu pencarian",
+              metrics ? metrics.totalSeekTime.toFixed(2) : "—",
+              "Satuan waktu",
+            ],
+            [
+              "⌁",
+              "Rata-rata waktu tunggu",
+              metrics ? metrics.averageWaitingTime.toFixed(2) : "—",
+              "Satuan waktu",
+            ],
+            [
+              "⇧",
+              "Throughput",
+              metrics ? metrics.throughput.toFixed(3) : "—",
+              "Permintaan per satuan waktu",
+            ],
           ].map(([icon, label, value, unit]) => (
             <div className="panel metric-card" key={label}>
               <span className="metric-icon">{icon}</span>
@@ -314,6 +350,7 @@ function App() {
             </div>
           ))}
         </section>
+
 
         <footer id="guide">
           <span>I/O PIPELINE SIMULATOR</span>
