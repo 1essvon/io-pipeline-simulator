@@ -1,4 +1,3 @@
-
 import type {
   DiskRequest,
   SimulationMetrics,
@@ -14,25 +13,29 @@ export function calculateMetrics(
     requests.map((request) => [request.id, request]),
   );
 
-  const servedSteps = steps.filter(
-    (step) =>
+  const servedByRequestId = new Map<string, SimulationStep>();
+
+  for (const step of steps) {
+    if (
       step.eventType === "request-served" &&
       step.requestId !== undefined &&
-      requestById.has(step.requestId),
-  );
+      requestById.has(step.requestId)
+    ) {
+      servedByRequestId.set(step.requestId, step);
+    }
+  }
 
   let totalWaitingTime = 0;
   let totalTurnaroundTime = 0;
   let totalResponseTime = 0;
   let maxWaitingTime = 0;
 
-  for (const step of servedSteps) {
-    const request = requestById.get(step.requestId!);
+  for (const [requestId, step] of servedByRequestId) {
+    const request = requestById.get(requestId);
     if (!request) continue;
 
     const completionTime = step.completionTime ?? step.elapsedTime;
-    const serviceStartTime =
-      step.serviceStartTime ?? completionTime;
+    const serviceStartTime = step.serviceStartTime ?? completionTime;
 
     const waitingTime = Math.max(
       0,
@@ -44,7 +47,10 @@ export function calculateMetrics(
       completionTime - request.arrivalTime,
     );
 
-    const responseTime = waitingTime;
+    const responseTime = Math.max(
+      0,
+      serviceStartTime - request.arrivalTime,
+    );
 
     totalWaitingTime += waitingTime;
     totalTurnaroundTime += turnaroundTime;
@@ -52,32 +58,24 @@ export function calculateMetrics(
     maxWaitingTime = Math.max(maxWaitingTime, waitingTime);
   }
 
-  const completedRequests = servedSteps.length;
+  const completedRequests = servedByRequestId.size;
 
   const averageWaitingTime =
-    completedRequests > 0
-      ? totalWaitingTime / completedRequests
-      : 0;
+    completedRequests > 0 ? totalWaitingTime / completedRequests : 0;
 
   const averageTurnaroundTime =
-    completedRequests > 0
-      ? totalTurnaroundTime / completedRequests
-      : 0;
+    completedRequests > 0 ? totalTurnaroundTime / completedRequests : 0;
 
   const averageResponseTime =
-    completedRequests > 0
-      ? totalResponseTime / completedRequests
-      : 0;
+    completedRequests > 0 ? totalResponseTime / completedRequests : 0;
 
-  const totalSeekTime =
-    steps.length > 0
-      ? steps[steps.length - 1].elapsedTime
-      : 0;
+  const totalSeekTime = steps.reduce(
+    (maximum, step) => Math.max(maximum, step.elapsedTime),
+    0,
+  );
 
   const throughput =
-    totalSeekTime > 0
-      ? completedRequests / totalSeekTime
-      : 0;
+    totalSeekTime > 0 ? completedRequests / totalSeekTime : 0;
 
   return {
     totalHeadMovement,
