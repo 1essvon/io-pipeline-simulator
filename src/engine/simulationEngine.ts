@@ -6,6 +6,7 @@ import type {
   SimulationResult,
 } from "../algorithms/types";
 import { validateConfig, validateRequests } from "../utils/validation";
+import { runFCFS } from "../algorithms/fcfs";
 
 export interface SimulationInput {
   algorithm: AlgorithmId;
@@ -26,6 +27,9 @@ export type AlgorithmRunner = (
 
 const algorithmRegistry = new Map<AlgorithmId, AlgorithmRunner>();
 
+// Daftarkan algoritma yang sudah tersedia.
+registerAlgorithm("FCFS", runFCFS);
+
 export function registerAlgorithm(
   id: AlgorithmId,
   runner: AlgorithmRunner,
@@ -33,6 +37,9 @@ export function registerAlgorithm(
   algorithmRegistry.set(id, runner);
 }
 
+/**
+ * Memvalidasi input sebelum simulasi dijalankan.
+ */
 export function validateSimulationInput(
   input: SimulationInput,
 ): string[] {
@@ -54,7 +61,10 @@ export function runSimulation(
   const errors = validateSimulationInput(input);
 
   if (errors.length > 0) {
-    return { success: false, errors };
+    return {
+      success: false,
+      errors,
+    };
   }
 
   const runner = algorithmRegistry.get(input.algorithm);
@@ -62,7 +72,9 @@ export function runSimulation(
   if (!runner) {
     return {
       success: false,
-      errors: [`Algoritma ${input.algorithm} belum didaftarkan.`],
+      errors: [
+        `Algoritma ${input.algorithm} belum didaftarkan.`,
+      ],
     };
   }
 
