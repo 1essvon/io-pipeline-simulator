@@ -36,3 +36,23 @@ export function validateSimulationInput(
     ...requestValidation.errors,
   ];
 }
+
+export function runSimulation(
+  input: SimulationInput,
+): SimulationOutput {
+  const errors = validateSimulationInput(input);
+
+  if (errors.length > 0) {
+    return {
+      success: false,
+      errors,
+    };
+  }
+
+  return {
+    success: false,
+    errors: [
+      `Algoritma ${input.algorithm} belum tersedia.`,
+    ],
+  };
+}
