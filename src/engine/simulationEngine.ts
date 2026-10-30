@@ -7,6 +7,9 @@ import type {
 } from "../algorithms/types";
 import { validateConfig, validateRequests } from "../utils/validation";
 import { runFCFS } from "../algorithms/fcfs";
+import { runCSCAN } from "../algorithms/cscan";
+import { runLOOK } from "../algorithms/look";
+import { runCLOOK } from "../algorithms/clook";
 
 export interface SimulationInput {
   algorithm: AlgorithmId;
@@ -29,6 +32,9 @@ const algorithmRegistry = new Map<AlgorithmId, AlgorithmRunner>();
 
 // Daftarkan algoritma yang sudah tersedia.
 registerAlgorithm("FCFS", runFCFS);
+registerAlgorithm("C-SCAN", runCSCAN);
+registerAlgorithm("LOOK", runLOOK);
+registerAlgorithm("C-LOOK", runCLOOK);
 
 export function registerAlgorithm(
   id: AlgorithmId,
