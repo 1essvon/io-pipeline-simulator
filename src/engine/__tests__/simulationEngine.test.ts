@@ -1,12 +1,10 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  registerAlgorithm,
   runSimulation,
 } from "../simulationEngine";
 import type {
   DiskRequest,
   SimulationConfig,
-  SimulationResult,
 } from "../../algorithms/types";
 
 const config: SimulationConfig = {
@@ -21,32 +19,8 @@ const requests: DiskRequest[] = [
   { id: "R1", cylinder: 82, arrivalTime: 0 },
 ];
 
-const fakeResult: SimulationResult = {
-  algorithm: "FCFS",
-  steps: [],
-  totalHeadMovement: 32,
-  totalSeekTime: 32,
-  completedRequests: 1,
-};
-
-beforeEach(() => {
-  registerAlgorithm("FCFS", () => fakeResult);
-});
-
 describe("simulationEngine", () => {
-  it("menjalankan algoritma yang sudah didaftarkan", () => {
-    const output = runSimulation({
-      algorithm: "FCFS",
-      requests,
-      config,
-    });
-
-    expect(output.success).toBe(true);
-    expect(output.result).toEqual(fakeResult);
-    expect(output.errors).toHaveLength(0);
-  });
-
-  it.each(["C-SCAN", "LOOK", "C-LOOK"] as const)(
+  it.each(["FCFS", "SSTF", "SCAN", "C-SCAN", "LOOK", "C-LOOK"] as const)(
     "menjalankan %s melalui jalur simulationEngine yang dipakai UI",
     (algorithm) => {
       const output = runSimulation({
@@ -63,17 +37,28 @@ describe("simulationEngine", () => {
     },
   );
 
-  it("menolak algoritma yang belum didaftarkan", () => {
+  it("menolak algoritma yang tidak terdaftar dengan pesan yang jelas", () => {
     const output = runSimulation({
-      algorithm: "SSTF",
+      algorithm: "UNKNOWN" as "FCFS",
       requests,
       config,
     });
 
     expect(output.success).toBe(false);
     expect(output.errors[0]).toContain(
-      "Algoritma SSTF belum didaftarkan.",
+      "Algoritma UNKNOWN belum didaftarkan.",
     );
+  });
+
+  it("menolak daftar request kosong sebelum menjalankan algoritma", () => {
+    const output = runSimulation({
+      algorithm: "FCFS",
+      requests: [],
+      config,
+    });
+
+    expect(output.success).toBe(false);
+    expect(output.errors).toContain("Minimal satu request harus disediakan.");
   });
 
   it("menolak head di luar batas", () => {
@@ -85,5 +70,18 @@ describe("simulationEngine", () => {
 
     expect(output.success).toBe(false);
     expect(output.errors.length).toBeGreaterThan(0);
+  });
+
+  it("tidak menggandakan pesan rentang cylinder tidak valid", () => {
+    const output = runSimulation({
+      algorithm: "FCFS",
+      requests,
+      config: { ...config, minCylinder: 20, maxCylinder: 10 },
+    });
+
+    expect(output.success).toBe(false);
+    expect(
+      output.errors.filter((error) => error === "Rentang cylinder tidak valid."),
+    ).toHaveLength(1);
   });
 });
