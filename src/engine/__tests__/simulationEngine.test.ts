@@ -46,6 +46,23 @@ describe("simulationEngine", () => {
     expect(output.errors).toHaveLength(0);
   });
 
+  it.each(["C-SCAN", "LOOK", "C-LOOK"] as const)(
+    "menjalankan %s melalui jalur simulationEngine yang dipakai UI",
+    (algorithm) => {
+      const output = runSimulation({
+        algorithm,
+        requests,
+        config,
+      });
+
+      expect(output.success).toBe(true);
+      expect(output.result?.algorithm).toBe(algorithm);
+      expect(output.result?.completedRequests).toBe(1);
+      expect(output.result?.totalHeadMovement).toBe(32);
+      expect(output.errors).toEqual([]);
+    },
+  );
+
   it("menolak algoritma yang belum didaftarkan", () => {
     const output = runSimulation({
       algorithm: "SSTF",
