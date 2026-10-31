@@ -7,6 +7,11 @@ import type {
 } from "../algorithms/types";
 import { validateConfig, validateRequests } from "../utils/validation";
 import { runFCFS } from "../algorithms/fcfs";
+import { runSSTF } from "../algorithms/sstf";
+import { runSCAN } from "../algorithms/scan";
+import { runCSCAN } from "../algorithms/cscan";
+import { runLOOK } from "../algorithms/look";
+import { runCLOOK } from "../algorithms/clook";
 
 export interface SimulationInput {
   algorithm: AlgorithmId;
@@ -29,6 +34,11 @@ const algorithmRegistry = new Map<AlgorithmId, AlgorithmRunner>();
 
 // Daftarkan algoritma yang sudah tersedia.
 registerAlgorithm("FCFS", runFCFS);
+registerAlgorithm("SSTF", runSSTF);
+registerAlgorithm("SCAN", runSCAN);
+registerAlgorithm("C-SCAN", runCSCAN);
+registerAlgorithm("LOOK", runLOOK);
+registerAlgorithm("C-LOOK", runCLOOK);
 
 export function registerAlgorithm(
   id: AlgorithmId,
@@ -43,16 +53,20 @@ export function registerAlgorithm(
 export function validateSimulationInput(
   input: SimulationInput,
 ): string[] {
+  if (!input || typeof input !== "object") {
+    return ["Input simulasi tidak valid."];
+  }
+
   const configValidation = validateConfig(input.config);
   const requestValidation = validateRequests(
     input.requests,
     input.config,
   );
 
-  return [
+  return [...new Set([
     ...configValidation.errors,
     ...requestValidation.errors,
-  ];
+  ])];
 }
 
 export function runSimulation(
