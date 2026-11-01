@@ -2,13 +2,20 @@
 import { useState } from "react";
 import "./App.css";
 import { runSimulation } from "./engine/simulationEngine";
-import type { SimulationResult } from "./algorithms/types";
+import type { AlgorithmId, SimulationResult } from "./algorithms/types";
 import { calculateMetrics } from "./engine/metricsEngine";
 
-const algorithms = ["FCFS", "SSTF", "SCAN", "C-SCAN", "LOOK", "C-LOOK"];
+const algorithms: AlgorithmId[] = [
+  "FCFS",
+  "SSTF",
+  "SCAN",
+  "C-SCAN",
+  "LOOK",
+  "C-LOOK",
+];
 
 function App() {
-  const [algorithm, setAlgorithm] = useState("FCFS");
+  const [algorithm, setAlgorithm] = useState<AlgorithmId>("FCFS");
   const [initialHead, setInitialHead] = useState("50");
   const [requests, setRequests] = useState("82, 170, 43, 140, 24, 16, 190");
   const [simulationResult, setSimulationResult] =
@@ -56,13 +63,7 @@ function App() {
     }
 
     const input = {
-      algorithm: algorithm as (typeof algorithms)[number] as
-        | "FCFS"
-        | "SSTF"
-        | "SCAN"
-        | "C-SCAN"
-        | "LOOK"
-        | "C-LOOK",
+      algorithm,
       requests: cylinders.map((value, index) => ({
         id: `R${index + 1}`,
         cylinder: Number(value),
@@ -189,7 +190,15 @@ function App() {
             <select
               id="algorithm"
               value={algorithm}
-              onChange={(event) => setAlgorithm(event.target.value)}
+              onChange={(event) => {
+                const selectedAlgorithm = algorithms.find(
+                  (item) => item === event.target.value,
+                );
+
+                if (selectedAlgorithm) {
+                  setAlgorithm(selectedAlgorithm);
+                }
+              }}
             >
               {algorithms.map((item) => (
                 <option key={item} value={item}>
@@ -296,8 +305,7 @@ function App() {
               <span>ⓘ</span>
               <p>
                 Ini adalah pratinjau masukan, bukan hasil simulasi.
-                Hasil akan ditampilkan setelah algoritma penjadwalan
-                terhubung ke engine.
+                Jalankan simulasi untuk melihat hasil penjadwalan.
               </p>
             </div>
           </div>

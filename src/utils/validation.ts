@@ -9,6 +9,13 @@ export interface ValidationResult {
 export function validateConfig(
   config: SimulationConfig,
 ): ValidationResult {
+  if (!config || typeof config !== "object") {
+    return {
+      valid: false,
+      errors: ["Konfigurasi simulasi tidak valid."],
+    };
+  }
+
   const errors: string[] = [];
 
   if (
@@ -46,32 +53,72 @@ export function validateRequests(
   requests: DiskRequest[],
   config: SimulationConfig,
 ): ValidationResult {
+  if (!Array.isArray(requests)) {
+    return {
+      valid: false,
+      errors: ["Daftar request tidak valid."],
+    };
+  }
+
   const errors: string[] = [];
   const seenIds = new Set<string>();
 
+  if (requests.length === 0) {
+    errors.push("Minimal satu request harus disediakan.");
+  }
+
+  const validCylinderRange =
+    config !== null &&
+    typeof config === "object" &&
+    Number.isInteger(config.minCylinder) &&
+    Number.isInteger(config.maxCylinder) &&
+    config.minCylinder >= 0 &&
+    config.maxCylinder > config.minCylinder;
+
+  if (!validCylinderRange) {
+    errors.push("Rentang cylinder tidak valid.");
+  }
+
   requests.forEach((request, index) => {
-    if (!request.id.trim()) {
-      errors.push(`Request ke-${index + 1} harus memiliki ID.`);
-    } else if (seenIds.has(request.id)) {
-      errors.push(`ID request "${request.id}" duplikat.`);
+    if (!request || typeof request !== "object" || Array.isArray(request)) {
+      errors.push(`Request ke-${index + 1} tidak valid.`);
+      return;
     }
 
-    seenIds.add(request.id);
+    if (typeof request.id !== "string" || !request.id.trim()) {
+      errors.push(`Request ke-${index + 1} harus memiliki ID.`);
+    } else if (seenIds.has(request.id.trim())) {
+      errors.push(`ID request "${request.id}" duplikat.`);
+    } else {
+      seenIds.add(request.id.trim());
+    }
 
     if (
       !Number.isInteger(request.cylinder) ||
-      request.cylinder < config.minCylinder ||
-      request.cylinder > config.maxCylinder
+      (validCylinderRange &&
+        (request.cylinder < config.minCylinder ||
+          request.cylinder > config.maxCylinder))
     ) {
       errors.push(
         `Cylinder request "${request.id}" berada di luar rentang.`,
       );
     }
 
-    if (!Number.isFinite(request.arrivalTime) || request.arrivalTime < 0) {
+    if (
+      typeof request.arrivalTime !== "number" ||
+      !Number.isFinite(request.arrivalTime) ||
+      request.arrivalTime < 0
+    ) {
       errors.push(
         `Arrival time request "${request.id}" tidak valid.`,
       );
+    }
+
+    if (
+      request.processId !== undefined &&
+      (typeof request.processId !== "string" || !request.processId.trim())
+    ) {
+      errors.push(`Process ID request "${request.id}" tidak valid.`);
     }
   });
 
