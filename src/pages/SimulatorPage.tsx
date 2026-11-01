@@ -7,11 +7,13 @@ import type {
 } from "../algorithms/types";
 import { runSimulation } from "../engine/simulationEngine";
 import { calculateMetrics } from "../engine/metricsEngine";
+import { usePlayback } from "../hooks/usePlayback";
 import { ConfigurationPanel } from "../components/simulator/ConfigurationPanel";
 import { DiskVisualization } from "../components/simulator/DiskVisualization";
 import { EventTimeline } from "../components/simulator/EventTimeline";
 import { ExplanationPanel } from "../components/simulator/ExplanationPanel";
 import { MetricsPanel } from "../components/simulator/MetricsPanel";
+import { PlaybackControls } from "../components/simulator/PlaybackControls";
 import "../components/simulator/simulator.css";
 
 const defaultConfig: SimulationConfig = {
@@ -37,15 +39,17 @@ export default function SimulatorPage() {
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [simulatedRequests, setSimulatedRequests] = useState<DiskRequest[]>([]);
   const [simulatedHead, setSimulatedHead] = useState(defaultConfig.initialHead);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
+
+  const steps = result?.steps ?? [];
+  const playback = usePlayback(steps.length);
 
   // Perubahan konfigurasi membuat hasil sebelumnya tidak berlaku.
   function clearResult() {
     setResult(null);
     setSimulatedRequests([]);
-    setSelectedIndex(null);
     setErrors([]);
+    playback.reset();
   }
 
   function handleAlgorithmChange(next: AlgorithmId) {
@@ -69,8 +73,8 @@ export default function SimulatorPage() {
     if (!output.success || !output.result) {
       setResult(null);
       setSimulatedRequests([]);
-      setSelectedIndex(null);
       setErrors(output.errors);
+      playback.reset();
       return;
     }
 
@@ -78,7 +82,7 @@ export default function SimulatorPage() {
     setResult(output.result);
     setSimulatedRequests(requests);
     setSimulatedHead(config.initialHead);
-    setSelectedIndex(null);
+    playback.reset();
   }
 
   const metrics = useMemo(
@@ -93,10 +97,8 @@ export default function SimulatorPage() {
     [result, simulatedRequests],
   );
 
-  const steps = result?.steps ?? [];
-  const vizIndex = steps.length > 0 ? (selectedIndex ?? steps.length - 1) : null;
-  const selectedStep =
-    selectedIndex !== null ? (steps[selectedIndex] ?? null) : null;
+  const activeIndex = playback.position >= 0 ? playback.position : null;
+  const activeStep = activeIndex !== null ? (steps[activeIndex] ?? null) : null;
 
   return (
     <div className="simulator-layout">
@@ -116,17 +118,31 @@ export default function SimulatorPage() {
           config={config}
           requests={requests}
           steps={steps}
-          activeIndex={vizIndex}
+          activeIndex={activeIndex}
           totalHeadMovement={result ? result.totalHeadMovement : null}
+        />
+        <PlaybackControls
+          totalSteps={steps.length}
+          position={playback.position}
+          isPlaying={playback.isPlaying}
+          isFinished={playback.isFinished}
+          speed={playback.speed}
+          onPlay={playback.play}
+          onPause={playback.pause}
+          onStepBack={playback.stepBack}
+          onStepForward={playback.stepForward}
+          onReset={playback.reset}
+          onReplay={playback.replay}
+          onSpeedChange={playback.setSpeed}
         />
         <MetricsPanel metrics={metrics} />
         <EventTimeline
           steps={steps}
           initialHead={simulatedHead}
-          selectedIndex={selectedIndex}
-          onSelect={setSelectedIndex}
+          selectedIndex={activeIndex}
+          onSelect={playback.seek}
         />
-        <ExplanationPanel step={selectedStep} />
+        <ExplanationPanel step={activeStep} />
       </div>
     </div>
   );
