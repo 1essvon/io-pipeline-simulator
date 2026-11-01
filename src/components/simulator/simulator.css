@@ -359,3 +359,33 @@
   font-size: 0.85rem;
   opacity: 0.8;
 }
+
+.explanation-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.explanation-mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.explanation-mode select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border, #2a3a63);
+  background: var(--color-surface-alt, #17233f);
+  color: inherit;
+}
+
+.explanation-hint {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--color-surface-alt, #17233f);
+  font-size: 0.9rem;
+}
