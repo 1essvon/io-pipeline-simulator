@@ -8,6 +8,8 @@ import type {
 import { runSimulation } from "../engine/simulationEngine";
 import { calculateMetrics } from "../engine/metricsEngine";
 import { ConfigurationPanel } from "../components/simulator/ConfigurationPanel";
+import { EventTimeline } from "../components/simulator/EventTimeline";
+import { ExplanationPanel } from "../components/simulator/ExplanationPanel";
 import { MetricsPanel } from "../components/simulator/MetricsPanel";
 import "../components/simulator/simulator.css";
 
@@ -33,12 +35,15 @@ export default function SimulatorPage() {
   const [requests, setRequests] = useState<DiskRequest[]>(defaultRequests);
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [simulatedRequests, setSimulatedRequests] = useState<DiskRequest[]>([]);
+  const [simulatedHead, setSimulatedHead] = useState(defaultConfig.initialHead);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
 
   // Perubahan konfigurasi membuat hasil sebelumnya tidak berlaku.
   function clearResult() {
     setResult(null);
     setSimulatedRequests([]);
+    setSelectedIndex(null);
     setErrors([]);
   }
 
@@ -63,6 +68,7 @@ export default function SimulatorPage() {
     if (!output.success || !output.result) {
       setResult(null);
       setSimulatedRequests([]);
+      setSelectedIndex(null);
       setErrors(output.errors);
       return;
     }
@@ -70,6 +76,8 @@ export default function SimulatorPage() {
     setErrors([]);
     setResult(output.result);
     setSimulatedRequests(requests);
+    setSimulatedHead(config.initialHead);
+    setSelectedIndex(null);
   }
 
   const metrics = useMemo(
@@ -84,6 +92,10 @@ export default function SimulatorPage() {
     [result, simulatedRequests],
   );
 
+  const steps = result?.steps ?? [];
+  const selectedStep =
+    selectedIndex !== null ? (steps[selectedIndex] ?? null) : null;
+
   return (
     <div className="simulator-layout">
       <ConfigurationPanel
@@ -96,7 +108,17 @@ export default function SimulatorPage() {
         onRequestsChange={handleRequestsChange}
         onRun={handleRun}
       />
-      <MetricsPanel metrics={metrics} />
+
+      <div className="simulator-main">
+        <MetricsPanel metrics={metrics} />
+        <EventTimeline
+          steps={steps}
+          initialHead={simulatedHead}
+          selectedIndex={selectedIndex}
+          onSelect={setSelectedIndex}
+        />
+        <ExplanationPanel step={selectedStep} />
+      </div>
     </div>
   );
 }

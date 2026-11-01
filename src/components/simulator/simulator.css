@@ -121,3 +121,75 @@
   color: #fff;
   cursor: pointer;
 }
+
+.simulator-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.timeline-panel,
+.explanation-panel {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--color-surface, #101a33);
+  color: var(--color-text, #e8eefc);
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.timeline-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.timeline-table th,
+.timeline-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border, #2a3a63);
+}
+
+.timeline-table .row-selected {
+  background: var(--color-surface-alt, #17233f);
+}
+
+.timeline-event {
+  padding: 2px 8px;
+  border: 1px solid var(--color-border, #2a3a63);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.timeline-event[aria-pressed="true"] {
+  background: var(--color-accent, #3b6cf6);
+  border-color: transparent;
+  color: #fff;
+}
+
+.explanation-text {
+  margin: 8px 0 12px;
+}
+
+.explanation-details {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin: 0;
+}
+
+.explanation-details dt {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.explanation-details dd {
+  margin: 0;
+  font-weight: 600;
+}
