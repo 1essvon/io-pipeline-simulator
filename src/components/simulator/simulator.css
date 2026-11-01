@@ -193,3 +193,121 @@
   margin: 0;
   font-weight: 600;
 }
+
+.disk-panel {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--color-surface, #101a33);
+  color: var(--color-text, #e8eefc);
+}
+
+.disk-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.disk-track-wrap {
+  padding: 0 32px;
+}
+
+.disk-track {
+  position: relative;
+  height: 96px;
+}
+
+.disk-bar {
+  position: absolute;
+  top: 44px;
+  left: 0;
+  right: 0;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--color-surface-alt, #17233f);
+  border: 1px solid var(--color-border, #2a3a63);
+}
+
+.disk-head,
+.disk-marker {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+
+.disk-head {
+  top: 10px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--color-accent, #3b6cf6);
+  color: #fff;
+  font-weight: 600;
+}
+
+.disk-marker {
+  top: 62px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border, #2a3a63);
+}
+
+.disk-marker.is-served {
+  background: var(--color-accent, #3b6cf6);
+  border-color: transparent;
+  color: #fff;
+}
+
+.disk-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.disk-summary {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  grid-template-columns: 2fr 1fr 1fr;
+}
+
+.disk-summary p {
+  margin: 4px 0 0;
+}
+
+.disk-total {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.disk-path {
+  width: 100%;
+  min-width: 480px;
+  margin-top: 12px;
+}
+
+.disk-path-line {
+  fill: none;
+  stroke: var(--color-accent, #3b6cf6);
+  stroke-width: 2;
+}
+
+.disk-path-dot {
+  fill: var(--color-accent, #3b6cf6);
+}
+
+.disk-path-label {
+  fill: var(--color-text, #e8eefc);
+  font-size: 14px;
+}
+
+@media (max-width: 800px) {
+  .disk-summary {
+    grid-template-columns: 1fr;
+  }
+}

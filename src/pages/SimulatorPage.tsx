@@ -8,6 +8,7 @@ import type {
 import { runSimulation } from "../engine/simulationEngine";
 import { calculateMetrics } from "../engine/metricsEngine";
 import { ConfigurationPanel } from "../components/simulator/ConfigurationPanel";
+import { DiskVisualization } from "../components/simulator/DiskVisualization";
 import { EventTimeline } from "../components/simulator/EventTimeline";
 import { ExplanationPanel } from "../components/simulator/ExplanationPanel";
 import { MetricsPanel } from "../components/simulator/MetricsPanel";
@@ -93,6 +94,7 @@ export default function SimulatorPage() {
   );
 
   const steps = result?.steps ?? [];
+  const vizIndex = steps.length > 0 ? (selectedIndex ?? steps.length - 1) : null;
   const selectedStep =
     selectedIndex !== null ? (steps[selectedIndex] ?? null) : null;
 
@@ -110,6 +112,13 @@ export default function SimulatorPage() {
       />
 
       <div className="simulator-main">
+        <DiskVisualization
+          config={config}
+          requests={requests}
+          steps={steps}
+          activeIndex={vizIndex}
+          totalHeadMovement={result ? result.totalHeadMovement : null}
+        />
         <MetricsPanel metrics={metrics} />
         <EventTimeline
           steps={steps}
