@@ -19,7 +19,9 @@ export function runFCFS(
   let totalHeadMovement = 0;
 
   for (const request of sortedRequests) {
-    const distance = Math.abs(request.cylinder - headPosition);
+    const distance = Math.abs(
+      request.cylinder - headPosition,
+    );
 
     totalHeadMovement += distance;
 

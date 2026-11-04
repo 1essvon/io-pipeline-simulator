@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { runFCFS } from "../fcfs";
-import type { DiskRequest, SimulationConfig } from "../types";
+import type {
+  DiskRequest,
+  SimulationConfig,
+} from "../types";
 
 const config: SimulationConfig = {
   initialHead: 50,

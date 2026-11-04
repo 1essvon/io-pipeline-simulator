@@ -116,7 +116,9 @@ export function runSCAN(
           ? config.maxCylinder
           : config.minCylinder;
 
-      const distance = Math.abs(boundary - headPosition);
+      const distance = Math.abs(
+        boundary - headPosition,
+      );
 
       totalHeadMovement += distance;
 
