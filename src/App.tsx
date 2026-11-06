@@ -1,9 +1,12 @@
-
 import { useState } from "react";
 import "./App.css";
 import { runSimulation } from "./engine/simulationEngine";
 import type { AlgorithmId, SimulationResult } from "./algorithms/types";
 import { calculateMetrics } from "./engine/metricsEngine";
+import ComparisonPage from "./pages/ComparisonPage";
+import { GuidePage } from "./pages/GuidePage";
+
+type ActivePage = "dashboard" | "comparison" | "guide";
 
 const algorithms: AlgorithmId[] = [
   "FCFS",
@@ -15,24 +18,31 @@ const algorithms: AlgorithmId[] = [
 ];
 
 function App() {
+  const [activePage, setActivePage] = useState<ActivePage>("dashboard");
+
   const [algorithm, setAlgorithm] = useState<AlgorithmId>("FCFS");
   const [initialHead, setInitialHead] = useState("50");
-  const [requests, setRequests] = useState("82, 170, 43, 140, 24, 16, 190");
+  const [requests, setRequests] = useState(
+    "82, 170, 43, 140, 24, 16, 190",
+  );
+
   const [simulationResult, setSimulationResult] =
-  useState<SimulationResult | null>(null);
+    useState<SimulationResult | null>(null);
+
   const [completedRequests, setCompletedRequests] = useState<
-  { id: string; cylinder: number; arrivalTime: number }[] | null
->(null);
+    { id: string; cylinder: number; arrivalTime: number }[] | null
+  >(null);
+
   const [simulationError, setSimulationError] = useState("");
 
   const metrics =
-  simulationResult && completedRequests
-    ? calculateMetrics(
-        completedRequests,
-        simulationResult.steps,
-        simulationResult.totalHeadMovement,
-      )
-    : null;
+    simulationResult && completedRequests
+      ? calculateMetrics(
+          completedRequests,
+          simulationResult.steps,
+          simulationResult.totalHeadMovement,
+        )
+      : null;
 
   const requestList = requests
     .split(",")
@@ -103,16 +113,43 @@ function App() {
         <p className="nav-label">MENU UTAMA</p>
 
         <nav aria-label="Navigasi utama">
-          <a className="nav-item active" href="#dashboard">
+          <a
+            className={`nav-item ${activePage === "dashboard" ? "active" : ""}`}
+            href="#dashboard"
+            onClick={() => setActivePage("dashboard")}
+          >
             ▦ Dasbor
           </a>
-          <a className="nav-item" href="#simulator">
+
+          <a
+            className="nav-item"
+            href="#simulator"
+            onClick={() => setActivePage("dashboard")}
+          >
             ◉ Simulasi
           </a>
-          <a className="nav-item" href="#metrics">
+
+          <a
+            className="nav-item"
+            href="#metrics"
+            onClick={() => setActivePage("dashboard")}
+          >
             ▤ Metrik Kinerja
           </a>
-          <a className="nav-item" href="#guide">
+
+          <a
+            className={`nav-item ${activePage === "comparison" ? "active" : ""}`}
+            href="#comparison"
+            onClick={() => setActivePage("comparison")}
+          >
+            ⇄ Perbandingan Algoritma
+          </a>
+
+          <a
+            className={`nav-item ${activePage === "guide" ? "active" : ""}`}
+            href="#guide"
+            onClick={() => setActivePage("guide")}
+          >
             ⓘ Panduan Belajar
           </a>
         </nav>
@@ -124,246 +161,256 @@ function App() {
         </div>
       </aside>
 
-      <section className="main-content" id="dashboard">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">
-              SISTEM OPERASI / PENJADWALAN DISK
-            </p>
-            <h1>I/O Pipeline Simulator</h1>
-          </div>
-
-          <div className="topbar-tag">
-            <span className="status-dot" />
-            Ruang simulasi
-          </div>
-        </header>
-
-        <section className="welcome-card">
-          <div className="welcome-copy">
-            <span className="pill">PEMBELAJARAN INTERAKTIF</span>
-
-            <h2>Pahami setiap pergerakan head disk.</h2>
-
-            <p>
-              Pelajari algoritma penjadwalan disk, amati pergerakan head,
-              dan bandingkan metrik kinerja dalam satu aplikasi.
-            </p>
-
-            <a className="primary-button" href="#simulator">
-              Mulai simulasi <span>↗</span>
-            </a>
-          </div>
-
-          <div className="disk-visual" aria-hidden="true">
-            <div className="disk-ring ring-one" />
-            <div className="disk-ring ring-two" />
-            <div className="disk-center">IO</div>
-            <span className="disk-point point-one" />
-            <span className="disk-point point-two" />
-            <span className="disk-point point-three" />
-          </div>
-        </section>
-
-        <section className="section-heading">
-          <div>
-            <p className="eyebrow">MULAI DI SINI</p>
-            <h2>Pengaturan simulasi</h2>
-          </div>
-          <span className="muted-text">Atur permintaan disk</span>
-        </section>
-
-        <section className="workspace-grid" id="simulator">
-          <div className="panel setup-panel">
-            <div className="panel-heading">
+      <section className="main-content">
+        {activePage === "dashboard" && (
+          <div id="dashboard">
+            <header className="topbar">
               <div>
-                <h3>Konfigurasi</h3>
-                <p>Tentukan algoritma dan masukan simulasi.</p>
+                <p className="eyebrow">
+                  SISTEM OPERASI / PENJADWALAN DISK
+                </p>
+                <h1>I/O Pipeline Simulator</h1>
               </div>
-              <span className="panel-icon">⚙</span>
-            </div>
 
-            <label htmlFor="algorithm">
-              Algoritma penjadwalan
-            </label>
+              <div className="topbar-tag">
+                <span className="status-dot" />
+                Ruang simulasi
+              </div>
+            </header>
 
-            <select
-              id="algorithm"
-              value={algorithm}
-              onChange={(event) => {
-                const selectedAlgorithm = algorithms.find(
-                  (item) => item === event.target.value,
-                );
+            <section className="welcome-card">
+              <div className="welcome-copy">
+                <span className="pill">PEMBELAJARAN INTERAKTIF</span>
 
-                if (selectedAlgorithm) {
-                  setAlgorithm(selectedAlgorithm);
-                }
-              }}
-            >
-              {algorithms.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
+                <h2>Pahami setiap pergerakan head disk.</h2>
 
-            <label htmlFor="initial-head">
-              Posisi awal head
-            </label>
+                <p>
+                  Pelajari algoritma penjadwalan disk, amati pergerakan head,
+                  dan bandingkan metrik kinerja dalam satu aplikasi.
+                </p>
 
-            <input
-              id="initial-head"
-              type="number"
-              min="0"
-              value={initialHead}
-              onChange={(event) => setInitialHead(event.target.value)}
-            />
+                <a className="primary-button" href="#simulator">
+                  Mulai simulasi <span>↗</span>
+                </a>
+              </div>
 
-            <label htmlFor="requests">
-              Antrean permintaan (nomor cylinder)
-            </label>
+              <div className="disk-visual" aria-hidden="true">
+                <div className="disk-ring ring-one" />
+                <div className="disk-ring ring-two" />
+                <div className="disk-center">IO</div>
+                <span className="disk-point point-one" />
+                <span className="disk-point point-two" />
+                <span className="disk-point point-three" />
+              </div>
+            </section>
 
-            <textarea
-              id="requests"
-              rows={3}
-              value={requests}
-              onChange={(event) => setRequests(event.target.value)}
-              placeholder="Contoh: 82, 170, 43, 140, 24"
-            />
+            <section className="section-heading">
+              <div>
+                <p className="eyebrow">MULAI DI SINI</p>
+                <h2>Pengaturan simulasi</h2>
+              </div>
+              <span className="muted-text">Atur permintaan disk</span>
+            </section>
 
-            <p className="helper-text">
-              Pisahkan setiap nomor cylinder dengan koma.
-            </p>
+            <section className="workspace-grid" id="simulator">
+              <div className="panel setup-panel">
+                <div className="panel-heading">
+                  <div>
+                    <h3>Konfigurasi</h3>
+                    <p>Tentukan algoritma dan masukan simulasi.</p>
+                  </div>
+                  <span className="panel-icon">⚙</span>
+                </div>
 
-            <button
-              className="primary-button full-width"
-              type="button"
-              onClick={handleRunSimulation}
-            >
-              Jalankan simulasi <span>→</span>
-            </button>
+                <label htmlFor="algorithm">
+                  Algoritma penjadwalan
+                </label>
 
-            {simulationError && (
-              <p role="alert" className="helper-text">
-                {simulationError}
-              </p>
-            )}
+                <select
+                  id="algorithm"
+                  value={algorithm}
+                  onChange={(event) => {
+                    const selectedAlgorithm = algorithms.find(
+                      (item) => item === event.target.value,
+                    );
 
-              {simulationResult && (
-                <div className="notice" role="status">
+                    if (selectedAlgorithm) {
+                      setAlgorithm(selectedAlgorithm);
+                    }
+                  }}
+                >
+                  {algorithms.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+
+                <label htmlFor="initial-head">
+                  Posisi awal head
+                </label>
+
+                <input
+                  id="initial-head"
+                  type="number"
+                  min="0"
+                  max="199"
+                  value={initialHead}
+                  onChange={(event) => setInitialHead(event.target.value)}
+                />
+
+                <label htmlFor="requests">
+                  Antrean permintaan (nomor cylinder)
+                </label>
+
+                <textarea
+                  id="requests"
+                  rows={3}
+                  value={requests}
+                  onChange={(event) => setRequests(event.target.value)}
+                  placeholder="Contoh: 82, 170, 43, 140, 24"
+                />
+
+                <p className="helper-text">
+                  Pisahkan setiap nomor cylinder dengan koma.
+                </p>
+
+                <button
+                  className="primary-button full-width"
+                  type="button"
+                  onClick={handleRunSimulation}
+                >
+                  Jalankan simulasi <span>→</span>
+                </button>
+
+                {simulationError && (
+                  <p role="alert" className="helper-text">
+                    {simulationError}
+                  </p>
+                )}
+
+                {simulationResult && (
+                  <div className="notice" role="status">
+                    <p>
+                      Simulasi berhasil. Total pergerakan head:{" "}
+                      {simulationResult.totalHeadMovement} cylinder.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="panel preview-panel">
+                <div className="panel-heading">
+                  <div>
+                    <h3>Ringkasan permintaan</h3>
+                    <p>Pratinjau masukan simulasi saat ini.</p>
+                  </div>
+
+                  <span className="preview-badge">PRATINJAU</span>
+                </div>
+
+                <div className="preview-stat">
+                  <span>Algoritma terpilih</span>
+                  <strong>{algorithm}</strong>
+                </div>
+
+                <div className="preview-stat">
+                  <span>Posisi awal head</span>
+                  <strong>{initialHead || "—"}</strong>
+                </div>
+
+                <div className="preview-stat">
+                  <span>Jumlah permintaan</span>
+                  <strong>{requestList.length}</strong>
+                </div>
+
+                <div className="request-list">
+                  <span className="request-list-label">
+                    ANTREAN CYLINDER
+                  </span>
+
+                  <div className="request-chips">
+                    {requestList.map((value, index) => (
+                      <span
+                        className="request-chip"
+                        key={`${value}-${index}`}
+                      >
+                        {value}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="notice">
+                  <span>ⓘ</span>
                   <p>
-                    Simulasi berhasil. Total pergerakan head:{" "}
-                    {simulationResult.totalHeadMovement} cylinder.
+                    Ini adalah pratinjau masukan, bukan hasil simulasi.
+                    Jalankan simulasi untuk melihat hasil penjadwalan.
                   </p>
                 </div>
-              )}
-            </div>
+              </div>
+            </section>
 
-            <div className="panel preview-panel">
-            <div className="panel-heading">
+            <section
+              className="section-heading metrics-heading"
+              id="metrics"
+            >
               <div>
-                <h3>Ringkasan permintaan</h3>
-                <p>Pratinjau masukan simulasi saat ini.</p>
+                <p className="eyebrow">ANALISIS KINERJA</p>
+                <h2>Ringkasan metrik</h2>
               </div>
 
-              <span className="preview-badge">PRATINJAU</span>
-            </div>
-
-            <div className="preview-stat">
-              <span>Algoritma terpilih</span>
-              <strong>{algorithm}</strong>
-            </div>
-
-            <div className="preview-stat">
-              <span>Posisi awal head</span>
-              <strong>{initialHead || "—"}</strong>
-            </div>
-
-            <div className="preview-stat">
-              <span>Jumlah permintaan</span>
-              <strong>{requestList.length}</strong>
-            </div>
-
-            <div className="request-list">
-              <span className="request-list-label">
-                ANTREAN CYLINDER
+              <span className="muted-text">
+                Tersedia setelah simulasi
               </span>
+            </section>
 
-              <div className="request-chips">
-                {requestList.map((value, index) => (
-                  <span
-                    className="request-chip"
-                    key={`${value}-${index}`}
-                  >
-                    {value}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <section className="metrics-grid">
+              {[
+                [
+                  "↔",
+                  "Total pergerakan head",
+                  metrics ? metrics.totalHeadMovement.toFixed(0) : "—",
+                  "Satuan cylinder",
+                ],
+                [
+                  "◷",
+                  "Total waktu pencarian",
+                  metrics ? metrics.totalSeekTime.toFixed(2) : "—",
+                  "Satuan waktu",
+                ],
+                [
+                  "⌁",
+                  "Rata-rata waktu tunggu",
+                  metrics ? metrics.averageWaitingTime.toFixed(2) : "—",
+                  "Satuan waktu",
+                ],
+                [
+                  "⇧",
+                  "Throughput",
+                  metrics ? metrics.throughput.toFixed(3) : "—",
+                  "Permintaan per satuan waktu",
+                ],
+              ].map(([icon, label, value, unit]) => (
+                <div className="panel metric-card" key={label}>
+                  <span className="metric-icon">{icon}</span>
+                  <p>{label}</p>
+                  <strong>{value}</strong>
+                  <span className="metric-unit">{unit}</span>
+                </div>
+              ))}
+            </section>
 
-            <div className="notice">
-              <span>ⓘ</span>
-              <p>
-                Ini adalah pratinjau masukan, bukan hasil simulasi.
-                Jalankan simulasi untuk melihat hasil penjadwalan.
-              </p>
-            </div>
+            <footer>
+              <span>I/O PIPELINE SIMULATOR</span>
+              <span>Media pembelajaran Sistem Operasi</span>
+            </footer>
           </div>
-        </section>
+        )}
 
-        <section className="section-heading metrics-heading" id="metrics">
-          <div>
-            <p className="eyebrow">ANALISIS KINERJA</p>
-            <h2>Ringkasan metrik</h2>
-          </div>
+        {activePage === "comparison" && <ComparisonPage />}
 
-          <span className="muted-text">
-            Tersedia setelah simulasi
-          </span>
-        </section>
-
-        
-        <section className="metrics-grid">
-          {[
-            [
-              "↔",
-              "Total pergerakan head",
-              metrics ? metrics.totalHeadMovement.toFixed(0) : "—",
-              "Satuan cylinder",
-            ],
-            [
-              "◷",
-              "Total waktu pencarian",
-              metrics ? metrics.totalSeekTime.toFixed(2) : "—",
-              "Satuan waktu",
-            ],
-            [
-              "⌁",
-              "Rata-rata waktu tunggu",
-              metrics ? metrics.averageWaitingTime.toFixed(2) : "—",
-              "Satuan waktu",
-            ],
-            [
-              "⇧",
-              "Throughput",
-              metrics ? metrics.throughput.toFixed(3) : "—",
-              "Permintaan per satuan waktu",
-            ],
-          ].map(([icon, label, value, unit]) => (
-            <div className="panel metric-card" key={label}>
-              <span className="metric-icon">{icon}</span>
-              <p>{label}</p>
-              <strong>{value}</strong>
-              <span className="metric-unit">{unit}</span>
-            </div>
-          ))}
-        </section>
-
-
-        <footer id="guide">
-          <span>I/O PIPELINE SIMULATOR</span>
-          <span>Media pembelajaran Sistem Operasi</span>
-        </footer>
+        {activePage === "guide" && <GuidePage />}
       </section>
     </main>
   );
