@@ -1,96 +1,486 @@
-import React, { useState } from 'react';
 
-interface MetricResult {
-  algorithm: string;
-  order: string;
-  totalMovement: number;
-  avgWaitTime: number;
-  avgTurnaroundTime: number;
-  throughput: number;
+import { useState } from "react";
+import type {
+  AlgorithmId,
+  DiskRequest,
+  SimulationConfig,
+  SimulationMetrics,
+  SimulationResult,
+} from "../algorithms/types";
+import { runSimulation } from "../engine/simulationEngine";
+import { calculateMetrics } from "../engine/metricsEngine";
+
+const algorithms: AlgorithmId[] = [
+  "FCFS",
+  "SSTF",
+  "SCAN",
+  "C-SCAN",
+  "LOOK",
+  "C-LOOK",
+];
+
+interface ComparisonResult {
+  algorithm: AlgorithmId;
+  result: SimulationResult;
+  metrics: SimulationMetrics;
 }
 
-export const ComparisonPage: React.FC = () => {
-  // Data sampel awal untuk tabel & grafik perbandingan
-  const [metrics] = useState<MetricResult[]>([
-    { algorithm: 'FCFS', order: '82 -> 170 -> 43 -> 140 -> 24', totalMovement: 460, avgWaitTime: 92.2, avgTurnaroundTime: 93.2, throughput: 1.0 },
-    { algorithm: 'SSTF', order: '58 -> 43 -> 24 -> 82 -> 140 -> 170', totalMovement: 172, avgWaitTime: 34.4, avgTurnaroundTime: 35.4, throughput: 1.0 },
-    { algorithm: 'SCAN', order: '58 -> 82 -> 140 -> 170 -> 199 -> 43 -> 24', totalMovement: 208, avgWaitTime: 41.6, avgTurnaroundTime: 42.6, throughput: 1.0 },
-    { algorithm: 'C-SCAN', order: '58 -> 82 -> 140 -> 170 -> 199 -> 0 -> 24 -> 43', totalMovement: 248, avgWaitTime: 51.8, avgTurnaroundTime: 52.8, throughput: 1.0 },
-    { algorithm: 'LOOK', order: '58 -> 82 -> 140 -> 170 -> 43 -> 24', totalMovement: 216, avgWaitTime: 43.0, avgTurnaroundTime: 44.0, throughput: 1.0 },
-    { algorithm: 'C-LOOK', order: '58 -> 82 -> 140 -> 170 -> 24 -> 43', totalMovement: 190, avgWaitTime: 42.6, avgTurnaroundTime: 43.6, throughput: 1.0 },
-  ]);
+const defaultConfig: SimulationConfig = {
+  initialHead: 50,
+  minCylinder: 0,
+  maxCylinder: 199,
+  direction: "up",
+  serviceTime: 1,
+};
 
-  const maxMovement = Math.max(...metrics.map(m => m.totalMovement));
+export const ComparisonPage = () => {
+  const [initialHead, setInitialHead] = useState("50");
+  const [requestsInput, setRequestsInput] = useState(
+    "82, 170, 43, 140, 24, 16, 190",
+  );
+  const [comparisonResults, setComparisonResults] = useState<
+    ComparisonResult[]
+  >([]);
+  const [error, setError] = useState("");
+  const [hasCompared, setHasCompared] = useState(false);
+
+  function handleCompare() {
+    setError("");
+    setComparisonResults([]);
+    setHasCompared(false);
+
+    const head = Number(initialHead);
+
+    if (
+      initialHead.trim() === "" ||
+      !Number.isInteger(head) ||
+      head < 0 ||
+      head > 199
+    ) {
+      setError("Posisi awal head harus berada dalam rentang 0–199.");
+      return;
+    }
+
+    const cylinderValues = requestsInput
+      .split(",")
+      .map((value) => value.trim());
+
+    if (
+      cylinderValues.length === 0 ||
+      cylinderValues.some(
+        (value) => value === "" || !Number.isInteger(Number(value)),
+      )
+    ) {
+      setError("Masukkan antrean cylinder yang valid.");
+      return;
+    }
+
+    const requests: DiskRequest[] = cylinderValues.map(
+      (value, index) => ({
+        id: `R${index + 1}`,
+        cylinder: Number(value),
+        arrivalTime: 0,
+      }),
+    );
+
+    const config: SimulationConfig = {
+      ...defaultConfig,
+      initialHead: head,
+    };
+
+    const results: ComparisonResult[] = [];
+
+    for (const algorithm of algorithms) {
+      const output = runSimulation({
+        algorithm,
+        requests,
+        config,
+      });
+
+      if (!output.success || !output.result) {
+        setError(`${algorithm}: ${output.errors.join(" ")}`);
+        return;
+      }
+
+      const metrics = calculateMetrics(
+        requests,
+        output.result.steps,
+        output.result.totalHeadMovement,
+      );
+
+      results.push({
+        algorithm,
+        result: output.result,
+        metrics,
+      });
+    }
+
+    setComparisonResults(results);
+    setHasCompared(true);
+  }
+
+  const bestResult = hasCompared
+    ? comparisonResults.reduce<ComparisonResult | null>(
+        (best, current) =>
+          !best ||
+          current.metrics.totalHeadMovement <
+            best.metrics.totalHeadMovement
+            ? current
+            : best,
+        null,
+      )
+    : null;
+
+  const maxMovement = Math.max(
+    1,
+    ...comparisonResults.map(
+      (item) => item.metrics.totalHeadMovement,
+    ),
+  );
+
+  const inputStyle = {
+    width: "100%",
+    padding: "12px",
+    border: "1px solid #E5E7EB",
+    borderRadius: "8px",
+    fontSize: "14px",
+    color: "#051F45",
+    backgroundColor: "#FFFFFF",
+    boxSizing: "border-box" as const,
+    marginTop: "8px",
+  };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto', fontFamily: 'sans-serif' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b' }}>Perbandingan Algoritma</h1>
-        <p style={{ color: '#64748b', marginTop: '0.5rem' }}>
-          Lihat dan bandingkan performa semua algoritma penjadwalan I/O dalam satu tampilan.
+    <main
+      style={{
+        padding: "24px",
+        maxWidth: "1200px",
+        margin: "0 auto",
+        color: "#051F45",
+      }}
+    >
+      <header style={{ marginBottom: "28px" }}>
+        <p
+          style={{
+            color: "#778295",
+            fontSize: "12px",
+            fontWeight: 700,
+            letterSpacing: "1px",
+          }}
+        >
+          ANALISIS KINERJA
         </p>
-      </div>
 
-      {/* Tabel Perbandingan */}
-      <div style={{ overflowX: 'auto', backgroundColor: '#fff', borderRadius: '0.5rem', border: '1px solid #e2e8f0', marginBottom: '2.5rem' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-              <th style={{ padding: '0.75rem 1rem', color: '#475569' }}>Algoritma</th>
-              <th style={{ padding: '0.75rem 1rem', color: '#475569' }}>Urutan Pelayanan</th>
-              <th style={{ padding: '0.75rem 1rem', color: '#475569' }}>Total Head Movement</th>
-              <th style={{ padding: '0.75rem 1rem', color: '#475569' }}>Rata-rata Waktu Tunggu</th>
-              <th style={{ padding: '0.75rem 1rem', color: '#475569' }}>Rata-rata Turnaround</th>
-              <th style={{ padding: '0.75rem 1rem', color: '#475569' }}>Throughput</th>
-            </tr>
-          </thead>
-          <tbody>
-            {metrics.map((row, index) => (
-              <tr key={index} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '0.75rem 1rem', fontWeight: 'bold', color: '#0f172a' }}>{row.algorithm}</td>
-                <td style={{ padding: '0.75rem 1rem', color: '#64748b', fontFamily: 'monospace' }}>{row.order}</td>
-                <td style={{ padding: '0.75rem 1rem', fontWeight: '600', color: '#2563eb' }}>{row.totalMovement}</td>
-                <td style={{ padding: '0.75rem 1rem', color: '#334155' }}>{row.avgWaitTime}</td>
-                <td style={{ padding: '0.75rem 1rem', color: '#334155' }}>{row.avgTurnaroundTime}</td>
-                <td style={{ padding: '0.75rem 1rem', color: '#334155' }}>{row.throughput}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+        <h1 style={{ fontSize: "28px", margin: "8px 0" }}>
+          Perbandingan Algoritma
+        </h1>
 
-      {/* Visualisasi Grafik Batang */}
-      <div style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', backgroundColor: '#ffffff' }}>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#0f172a', marginBottom: '1.5rem' }}>
-          Grafik Total Head Movement
-        </h3>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1.5rem', height: '200px', paddingBottom: '1rem', borderBottom: '2px solid #cbd5e1' }}>
-          {metrics.map((item, index) => {
-            const heightPercent = (item.totalMovement / maxMovement) * 100;
-            return (
-              <div key={index} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#2563eb', marginBottom: '0.25rem' }}>
-                  {item.totalMovement}
-                </span>
-                <div
-                  style={{
-                    width: '100%',
-                    maxWidth: '40px',
-                    height: `${heightPercent}%`,
-                    backgroundColor: '#3b82f6',
-                    borderRadius: '0.25rem 0.25rem 0 0',
-                    transition: 'height 0.3s ease'
-                  }}
-                />
-                <span style={{ marginTop: '0.5rem', fontSize: '0.85rem', fontWeight: '600', color: '#475569' }}>
-                  {item.algorithm}
-                </span>
-              </div>
-            );
-          })}
+        <p style={{ color: "#475569", lineHeight: 1.6 }}>
+          Bandingkan performa enam algoritma penjadwalan disk
+          menggunakan konfigurasi dan antrean request yang sama.
+        </p>
+      </header>
+
+      <section
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E5E7EB",
+          borderRadius: "12px",
+          padding: "24px",
+          marginBottom: "24px",
+        }}
+      >
+        <h2 style={{ fontSize: "19px", marginTop: 0 }}>
+          Konfigurasi perbandingan
+        </h2>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "20px",
+          }}
+        >
+          <label style={{ fontWeight: 600, fontSize: "14px" }}>
+            Posisi awal head
+            <input
+              type="number"
+              min="0"
+              max="199"
+              value={initialHead}
+              onChange={(event) => setInitialHead(event.target.value)}
+              style={inputStyle}
+            />
+          </label>
+
+          <label style={{ fontWeight: 600, fontSize: "14px" }}>
+            Antrean cylinder
+            <textarea
+              rows={3}
+              value={requestsInput}
+              onChange={(event) =>
+                setRequestsInput(event.target.value)
+              }
+              placeholder="82, 170, 43, 140, 24"
+              style={{
+                ...inputStyle,
+                resize: "vertical",
+                fontFamily: "inherit",
+              }}
+            />
+          </label>
         </div>
-      </div>
-    </div>
+
+        <p style={{ color: "#778295", fontSize: "12px" }}>
+          Rentang cylinder: 0–199. Pisahkan nomor cylinder dengan koma.
+          Arah awal: up. Service time: 1.
+        </p>
+
+        <button
+          type="button"
+          onClick={handleCompare}
+          style={{
+            backgroundColor: "#051F45",
+            color: "#FFFFFF",
+            border: "none",
+            borderRadius: "8px",
+            padding: "12px 22px",
+            fontWeight: 600,
+            cursor: "pointer",
+            marginTop: "8px",
+          }}
+        >
+          Bandingkan Semua Algoritma
+        </button>
+
+        {error && (
+          <p
+            role="alert"
+            style={{
+              color: "#B42318",
+              backgroundColor: "#FEF3F2",
+              padding: "12px",
+              borderRadius: "8px",
+              marginTop: "16px",
+            }}
+          >
+            {error}
+          </p>
+        )}
+      </section>
+
+      {hasCompared && (
+        <>
+          {bestResult && (
+            <section
+              style={{
+                backgroundColor: "#FCE7EC",
+                border: "1px solid #F2C4CD",
+                borderRadius: "12px",
+                padding: "20px",
+                marginBottom: "24px",
+              }}
+            >
+              <p style={{ margin: 0, fontSize: "13px" }}>
+                HEAD MOVEMENT TERENDAH
+              </p>
+              <h2 style={{ margin: "8px 0" }}>
+                {bestResult.algorithm}
+              </h2>
+              <strong>
+                {bestResult.metrics.totalHeadMovement} cylinder
+              </strong>
+            </section>
+          )}
+
+          <section
+            style={{
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #E5E7EB",
+              borderRadius: "12px",
+              padding: "20px",
+              marginBottom: "24px",
+              overflowX: "auto",
+            }}
+          >
+            <h2 style={{ fontSize: "19px" }}>
+              Tabel perbandingan
+            </h2>
+
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                textAlign: "left",
+                fontSize: "13px",
+                minWidth: "850px",
+              }}
+            >
+              <thead>
+                <tr style={{ backgroundColor: "#F8F7F4" }}>
+                  {[
+                    "Algoritma",
+                    "Urutan pelayanan",
+                    "Head movement",
+                    "Waiting time",
+                    "Turnaround",
+                    "Throughput",
+                  ].map((heading) => (
+                    <th
+                      key={heading}
+                      style={{
+                        padding: "12px",
+                        borderBottom: "1px solid #E5E7EB",
+                      }}
+                    >
+                      {heading}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+
+              <tbody>
+                {comparisonResults.map((item) => {
+                  const order = item.result.steps
+                    .filter(
+                      (step) =>
+                        step.eventType === "request-served" &&
+                        step.cylinder !== undefined,
+                    )
+                    .map((step) => step.cylinder)
+                    .join(" → ");
+
+                  return (
+                    <tr key={item.algorithm}>
+                      <td style={{ padding: "12px", fontWeight: 700 }}>
+                        {item.algorithm}
+                      </td>
+                      <td
+                        style={{
+                          padding: "12px",
+                          fontFamily: "monospace",
+                        }}
+                      >
+                        {order || "—"}
+                      </td>
+                      <td style={{ padding: "12px" }}>
+                        {item.metrics.totalHeadMovement.toFixed(0)}
+                      </td>
+                      <td style={{ padding: "12px" }}>
+                        {item.metrics.averageWaitingTime.toFixed(2)}
+                      </td>
+                      <td style={{ padding: "12px" }}>
+                        {item.metrics.averageTurnaroundTime.toFixed(2)}
+                      </td>
+                      <td style={{ padding: "12px" }}>
+                        {item.metrics.throughput.toFixed(3)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </section>
+
+          <section
+            style={{
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #E5E7EB",
+              borderRadius: "12px",
+              padding: "24px",
+            }}
+          >
+            <h2 style={{ fontSize: "19px" }}>
+              Grafik Total Head Movement
+            </h2>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-end",
+                gap: "16px",
+                height: "240px",
+                paddingTop: "30px",
+                overflowX: "auto",
+                borderBottom: "2px solid #E5E7EB",
+              }}
+            >
+              {comparisonResults.map((item) => {
+                const movement = item.metrics.totalHeadMovement;
+                const height = (movement / maxMovement) * 100;
+                const isBest =
+                  item.algorithm === bestResult?.algorithm;
+
+                return (
+                  <div
+                    key={item.algorithm}
+                    style={{
+                      flex: "1 0 65px",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    <strong style={{ fontSize: "12px", marginBottom: 6 }}>
+                      {movement}
+                    </strong>
+
+                    <div
+                      title={`${item.algorithm}: ${movement} cylinder`}
+                      style={{
+                        width: "70%",
+                        maxWidth: "55px",
+                        height: `${height}%`,
+                        minHeight: movement === 0 ? "2px" : "4px",
+                        backgroundColor: isBest ? "#F2C4CD" : "#051F45",
+                        borderRadius: "6px 6px 0 0",
+                        transition: "height 0.3s ease",
+                      }}
+                    />
+
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        marginTop: "8px",
+                      }}
+                    >
+                      {item.algorithm}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p style={{ color: "#778295", fontSize: "12px" }}>
+              Batang berwarna pink menunjukkan algoritma dengan
+              total head movement terendah.
+            </p>
+          </section>
+        </>
+      )}
+
+      {!hasCompared && !error && (
+        <section
+          style={{
+            textAlign: "center",
+            padding: "40px 20px",
+            backgroundColor: "#FFFFFF",
+            border: "1px dashed #E5E7EB",
+            borderRadius: "12px",
+          }}
+        >
+          <h3>Belum ada hasil perbandingan</h3>
+          <p style={{ color: "#778295" }}>
+            Masukkan konfigurasi, lalu klik tombol Bandingkan Semua
+            Algoritma.
+          </p>
+        </section>
+      )}
+    </main>
   );
 };
+
+export default ComparisonPage;
