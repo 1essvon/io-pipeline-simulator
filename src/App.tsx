@@ -5,8 +5,9 @@ import type { AlgorithmId, SimulationResult } from "./algorithms/types";
 import { calculateMetrics } from "./engine/metricsEngine";
 import ComparisonPage from "./pages/ComparisonPage";
 import { GuidePage } from "./pages/GuidePage";
+import SimulatorPage from "./pages/SimulatorPage";
 
-type ActivePage = "dashboard" | "comparison" | "guide";
+type ActivePage = "dashboard" | "simulator" | "comparison" | "guide";
 
 const algorithms: AlgorithmId[] = [
   "FCFS",
@@ -122,9 +123,9 @@ function App() {
           </a>
 
           <a
-            className="nav-item"
-            href="#simulator"
-            onClick={() => setActivePage("dashboard")}
+            className={`nav-item ${activePage === "simulator" ? "active" : ""}`}
+            href="#simulator-page"
+            onClick={() => setActivePage("simulator")}
           >
             ◉ Simulasi
           </a>
@@ -189,7 +190,11 @@ function App() {
                   dan bandingkan metrik kinerja dalam satu aplikasi.
                 </p>
 
-                <a className="primary-button" href="#simulator">
+                <a
+                  className="primary-button"
+                  href="#simulator-page"
+                  onClick={() => setActivePage("simulator")}
+                >
                   Mulai simulasi <span>↗</span>
                 </a>
               </div>
@@ -405,6 +410,12 @@ function App() {
               <span>I/O PIPELINE SIMULATOR</span>
               <span>Media pembelajaran Sistem Operasi</span>
             </footer>
+          </div>
+        )}
+
+        {activePage === "simulator" && (
+          <div id="simulator-page">
+            <SimulatorPage />
           </div>
         )}
 
