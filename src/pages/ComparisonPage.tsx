@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import type {
   AlgorithmId,
@@ -31,6 +30,28 @@ const defaultConfig: SimulationConfig = {
   maxCylinder: 199,
   direction: "up",
   serviceTime: 1,
+};
+
+const panelStyle = {
+  backgroundColor: "var(--color-surface)",
+  color: "var(--color-text)",
+  border: "1px solid var(--color-line)",
+  borderRadius: "12px",
+  padding: "24px",
+  marginBottom: "24px",
+  boxShadow: "var(--shadow-card)",
+};
+
+const inputStyle = {
+  width: "100%",
+  padding: "12px",
+  border: "1px solid var(--color-border)",
+  borderRadius: "8px",
+  fontSize: "14px",
+  color: "var(--color-text)",
+  backgroundColor: "var(--color-bg)",
+  boxSizing: "border-box" as const,
+  marginTop: "8px",
 };
 
 export const ComparisonPage = () => {
@@ -138,31 +159,19 @@ export const ComparisonPage = () => {
     ),
   );
 
-  const inputStyle = {
-    width: "100%",
-    padding: "12px",
-    border: "1px solid #E5E7EB",
-    borderRadius: "8px",
-    fontSize: "14px",
-    color: "#051F45",
-    backgroundColor: "#FFFFFF",
-    boxSizing: "border-box" as const,
-    marginTop: "8px",
-  };
-
   return (
     <main
       style={{
         padding: "24px",
         maxWidth: "1200px",
         margin: "0 auto",
-        color: "#051F45",
+        color: "var(--color-text)",
       }}
     >
       <header style={{ marginBottom: "28px" }}>
         <p
           style={{
-            color: "#778295",
+            color: "var(--color-muted)",
             fontSize: "12px",
             fontWeight: 700,
             letterSpacing: "1px",
@@ -175,21 +184,13 @@ export const ComparisonPage = () => {
           Perbandingan Algoritma
         </h1>
 
-        <p style={{ color: "#475569", lineHeight: 1.6 }}>
+        <p style={{ color: "var(--color-muted)", lineHeight: 1.6 }}>
           Bandingkan performa enam algoritma penjadwalan disk
           menggunakan konfigurasi dan antrean request yang sama.
         </p>
       </header>
 
-      <section
-        style={{
-          backgroundColor: "#FFFFFF",
-          border: "1px solid #E5E7EB",
-          borderRadius: "12px",
-          padding: "24px",
-          marginBottom: "24px",
-        }}
-      >
+      <section style={panelStyle}>
         <h2 style={{ fontSize: "19px", marginTop: 0 }}>
           Konfigurasi perbandingan
         </h2>
@@ -218,9 +219,7 @@ export const ComparisonPage = () => {
             <textarea
               rows={3}
               value={requestsInput}
-              onChange={(event) =>
-                setRequestsInput(event.target.value)
-              }
+              onChange={(event) => setRequestsInput(event.target.value)}
               placeholder="82, 170, 43, 140, 24"
               style={{
                 ...inputStyle,
@@ -231,7 +230,7 @@ export const ComparisonPage = () => {
           </label>
         </div>
 
-        <p style={{ color: "#778295", fontSize: "12px" }}>
+        <p style={{ color: "var(--color-muted)", fontSize: "12px" }}>
           Rentang cylinder: 0–199. Pisahkan nomor cylinder dengan koma.
           Arah awal: up. Service time: 1.
         </p>
@@ -240,7 +239,7 @@ export const ComparisonPage = () => {
           type="button"
           onClick={handleCompare}
           style={{
-            backgroundColor: "#051F45",
+            backgroundColor: "var(--color-navy)",
             color: "#FFFFFF",
             border: "none",
             borderRadius: "8px",
@@ -257,8 +256,8 @@ export const ComparisonPage = () => {
           <p
             role="alert"
             style={{
-              color: "#B42318",
-              backgroundColor: "#FEF3F2",
+              color: "var(--color-error)",
+              backgroundColor: "var(--color-soft)",
               padding: "12px",
               borderRadius: "8px",
               marginTop: "16px",
@@ -274,8 +273,9 @@ export const ComparisonPage = () => {
           {bestResult && (
             <section
               style={{
-                backgroundColor: "#FCE7EC",
-                border: "1px solid #F2C4CD",
+                backgroundColor: "var(--color-soft)",
+                color: "var(--color-text)",
+                border: "1px solid var(--color-pink)",
                 borderRadius: "12px",
                 padding: "20px",
                 marginBottom: "24px",
@@ -294,14 +294,7 @@ export const ComparisonPage = () => {
           )}
 
           <section
-            style={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #E5E7EB",
-              borderRadius: "12px",
-              padding: "20px",
-              marginBottom: "24px",
-              overflowX: "auto",
-            }}
+            style={{ ...panelStyle, overflowX: "auto" }}
           >
             <h2 style={{ fontSize: "19px" }}>
               Tabel perbandingan
@@ -314,10 +307,11 @@ export const ComparisonPage = () => {
                 textAlign: "left",
                 fontSize: "13px",
                 minWidth: "850px",
+                color: "var(--color-text)",
               }}
             >
               <thead>
-                <tr style={{ backgroundColor: "#F8F7F4" }}>
+                <tr style={{ backgroundColor: "var(--color-soft)" }}>
                   {[
                     "Algoritma",
                     "Urutan pelayanan",
@@ -330,7 +324,8 @@ export const ComparisonPage = () => {
                       key={heading}
                       style={{
                         padding: "12px",
-                        borderBottom: "1px solid #E5E7EB",
+                        borderBottom: "1px solid var(--color-border)",
+                        color: "var(--color-text)",
                       }}
                     >
                       {heading}
@@ -352,27 +347,28 @@ export const ComparisonPage = () => {
 
                   return (
                     <tr key={item.algorithm}>
-                      <td style={{ padding: "12px", fontWeight: 700 }}>
+                      <td style={{ padding: "12px", fontWeight: 700, borderBottom: "1px solid var(--color-border)" }}>
                         {item.algorithm}
                       </td>
                       <td
                         style={{
                           padding: "12px",
                           fontFamily: "monospace",
+                          borderBottom: "1px solid var(--color-border)",
                         }}
                       >
                         {order || "—"}
                       </td>
-                      <td style={{ padding: "12px" }}>
+                      <td style={{ padding: "12px", borderBottom: "1px solid var(--color-border)" }}>
                         {item.metrics.totalHeadMovement.toFixed(0)}
                       </td>
-                      <td style={{ padding: "12px" }}>
+                      <td style={{ padding: "12px", borderBottom: "1px solid var(--color-border)" }}>
                         {item.metrics.averageWaitingTime.toFixed(2)}
                       </td>
-                      <td style={{ padding: "12px" }}>
+                      <td style={{ padding: "12px", borderBottom: "1px solid var(--color-border)" }}>
                         {item.metrics.averageTurnaroundTime.toFixed(2)}
                       </td>
-                      <td style={{ padding: "12px" }}>
+                      <td style={{ padding: "12px", borderBottom: "1px solid var(--color-border)" }}>
                         {item.metrics.throughput.toFixed(3)}
                       </td>
                     </tr>
@@ -382,14 +378,7 @@ export const ComparisonPage = () => {
             </table>
           </section>
 
-          <section
-            style={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #E5E7EB",
-              borderRadius: "12px",
-              padding: "24px",
-            }}
-          >
+          <section style={panelStyle}>
             <h2 style={{ fontSize: "19px" }}>
               Grafik Total Head Movement
             </h2>
@@ -402,7 +391,7 @@ export const ComparisonPage = () => {
                 height: "240px",
                 paddingTop: "30px",
                 overflowX: "auto",
-                borderBottom: "2px solid #E5E7EB",
+                borderBottom: "2px solid var(--color-border)",
               }}
             >
               {comparisonResults.map((item) => {
@@ -421,6 +410,7 @@ export const ComparisonPage = () => {
                       flexDirection: "column",
                       alignItems: "center",
                       justifyContent: "flex-end",
+                      color: "var(--color-text)",
                     }}
                   >
                     <strong style={{ fontSize: "12px", marginBottom: 6 }}>
@@ -434,7 +424,9 @@ export const ComparisonPage = () => {
                         maxWidth: "55px",
                         height: `${height}%`,
                         minHeight: movement === 0 ? "2px" : "4px",
-                        backgroundColor: isBest ? "#F2C4CD" : "#051F45",
+                        backgroundColor: isBest
+                          ? "var(--color-pink)"
+                          : "var(--color-navy)",
                         borderRadius: "6px 6px 0 0",
                         transition: "height 0.3s ease",
                       }}
@@ -454,7 +446,7 @@ export const ComparisonPage = () => {
               })}
             </div>
 
-            <p style={{ color: "#778295", fontSize: "12px" }}>
+            <p style={{ color: "var(--color-muted)", fontSize: "12px" }}>
               Batang berwarna pink menunjukkan algoritma dengan
               total head movement terendah.
             </p>
@@ -465,15 +457,14 @@ export const ComparisonPage = () => {
       {!hasCompared && !error && (
         <section
           style={{
+            ...panelStyle,
             textAlign: "center",
             padding: "40px 20px",
-            backgroundColor: "#FFFFFF",
-            border: "1px dashed #E5E7EB",
-            borderRadius: "12px",
+            borderStyle: "dashed",
           }}
         >
           <h3>Belum ada hasil perbandingan</h3>
-          <p style={{ color: "#778295" }}>
+          <p style={{ color: "var(--color-muted)" }}>
             Masukkan konfigurasi, lalu klik tombol Bandingkan Semua
             Algoritma.
           </p>
