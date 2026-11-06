@@ -68,7 +68,9 @@ export function runSSTF(
 
     const request = selectedRequest.request;
 
-    const distance = Math.abs(request.cylinder - headPosition);
+    const distance = Math.abs(
+      request.cylinder - headPosition,
+    );
 
     totalHeadMovement += distance;
 

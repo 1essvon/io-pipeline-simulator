@@ -61,9 +61,9 @@ describe("SCAN Algorithm", () => {
 
   it("mencatat perubahan arah ketika mencapai batas disk", () => {
     const requests: DiskRequest[] = [
-  { id: "R1", cylinder: 80, arrivalTime: 0 },
-  { id: "R2", cylinder: 20, arrivalTime: 0 },
-];
+      { id: "R1", cylinder: 80, arrivalTime: 0 },
+      { id: "R2", cylinder: 20, arrivalTime: 0 },
+    ];
 
     const result = runSCAN(requests, config);
 
