@@ -1,0 +1,50 @@
+/* Design tokens — milik Anggota 4. Anggota lain hanya memakai variabel ini. */
+:root {
+  /* Warna dasar */
+  --color-navy: #051F45;        /* Midnight Navy */
+  --color-pink: #F3C4CD;        /* Pinky Cloud */
+  --color-bg: #FFF8F9;          /* off-white */
+  --color-surface: #FFFFFF;
+  --color-soft: #FCE9ED;        /* pink sangat muda */
+  --color-line: #F0DDE1;
+  --color-text: #051F45;
+  --color-muted: #55668A;
+  --color-on-pink: #051F45;
+  --color-on-navy: #FFF8F9;
+  --color-success: #1F7A5A;
+  --color-danger: #B3261E;
+  --color-focus: #F3C4CD;
+
+  /* Tipografi */
+  --font-display: 'Bricolage Grotesque', 'Figtree', system-ui, sans-serif;
+  --font-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.75rem;
+  --fs-hero: clamp(2.4rem, 6vw, 4rem);
+
+  /* Jarak, radius, bayangan */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px;
+  --radius-sm: 10px; --radius-md: 16px; --radius-pill: 999px;
+  --shadow-card: 0 1px 2px rgba(5, 31, 69, 0.06);
+  --container: 1180px;
+  --navbar-h: 64px;
+}
+
+/* Mode gelap: navy menjadi latar, pink menjadi aksen */
+:root[data-theme='dark'] {
+  --color-bg: #051F45;
+  --color-surface: #0A2A58;
+  --color-soft: #0E346B;
+  --color-line: #1B4580;
+  --color-text: #FFF8F9;
+  --color-muted: #A9B8D4;
+  --color-on-pink: #051F45;
+  --color-on-navy: #051F45;
+  --color-navy: #F3C4CD;
+  --color-pink: #F3C4CD;
+  --color-success: #7FE0B5;
+  --color-danger: #FFB4AB;
+}
