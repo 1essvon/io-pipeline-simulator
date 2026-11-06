@@ -1,50 +1,77 @@
-/* Design tokens — milik Anggota 4. Anggota lain hanya memakai variabel ini. */
 :root {
-  /* Warna dasar */
-  --color-navy: #051F45;        /* Midnight Navy */
-  --color-pink: #F3C4CD;        /* Pinky Cloud */
-  --color-bg: #FFF8F9;          /* off-white */
+  color-scheme: light;
+
+  --color-navy: #051F45;
+  --color-pink: #F2C4CD;
+  --color-bg: #F8F7F4;
   --color-surface: #FFFFFF;
-  --color-soft: #FCE9ED;        /* pink sangat muda */
-  --color-line: #F0DDE1;
+  --color-soft: #FCE7EC;
+  --color-line: #E5E7EB;
   --color-text: #051F45;
-  --color-muted: #55668A;
+  --color-muted: #475569;
+
   --color-on-pink: #051F45;
-  --color-on-navy: #FFF8F9;
+  --color-on-navy: #FFFFFF;
+  --color-accent: #051F45;
+  --color-on-accent: #FFFFFF;
+
   --color-success: #1F7A5A;
   --color-danger: #B3261E;
-  --color-focus: #F3C4CD;
+  --color-focus: #D66A85;
+  --color-surface-alt: #FCE7EC;
+  --color-border: #E5E7EB;
+  --color-error: #B3261E;
 
-  /* Tipografi */
   --font-display: 'Bricolage Grotesque', 'Figtree', system-ui, sans-serif;
   --font-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
   --fs-sm: 0.875rem;
   --fs-md: 1rem;
   --fs-lg: 1.25rem;
   --fs-xl: 1.75rem;
   --fs-hero: clamp(2.4rem, 6vw, 4rem);
 
-  /* Jarak, radius, bayangan */
-  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
-  --space-5: 24px; --space-6: 32px; --space-7: 48px;
-  --radius-sm: 10px; --radius-md: 16px; --radius-pill: 999px;
-  --shadow-card: 0 1px 2px rgba(5, 31, 69, 0.06);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 2px 8px rgba(5,31,69,.06);
+
   --container: 1180px;
   --navbar-h: 64px;
 }
 
-/* Mode gelap: navy menjadi latar, pink menjadi aksen */
 :root[data-theme='dark'] {
-  --color-bg: #051F45;
-  --color-surface: #0A2A58;
-  --color-soft: #0E346B;
-  --color-line: #1B4580;
-  --color-text: #FFF8F9;
-  --color-muted: #A9B8D4;
+  color-scheme: dark;
+
+  --color-navy: #051F45;
+  --color-pink: #F2C4CD;
+  --color-bg: #07172E;
+  --color-surface: #102747;
+  --color-soft: #19385F;
+  --color-line: #345071;
+  --color-text: #F8FAFC;
+  --color-muted: #C1CDDC;
+
   --color-on-pink: #051F45;
-  --color-on-navy: #051F45;
-  --color-navy: #F3C4CD;
-  --color-pink: #F3C4CD;
+  --color-on-navy: #FFFFFF;
+  --color-accent: #F2C4CD;
+  --color-on-accent: #051F45;
+
   --color-success: #7FE0B5;
   --color-danger: #FFB4AB;
+  --color-focus: #F2C4CD;
+  --color-surface-alt: #19385F;
+  --color-border: #345071;
+  --color-error: #FFB4AB;
+
+  --shadow-card: 0 2px 10px rgba(0,0,0,.2);
 }
