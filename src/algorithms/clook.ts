@@ -31,8 +31,8 @@ export function runCLOOK(
     )
     .sort((a, b) =>
       config.direction === "up"
-        ? b.cylinder - a.cylinder
-        : a.cylinder - b.cylinder,
+        ? a.cylinder - b.cylinder
+        : b.cylinder - a.cylinder,
     );
 
   const steps: SimulationStep[] = [];
