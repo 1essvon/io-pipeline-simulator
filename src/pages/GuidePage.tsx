@@ -25,7 +25,10 @@ const inputStyle: React.CSSProperties = {
 };
 
 export const GuidePage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'konsep' | 'penggunaan' | 'glosarium'>('konsep');
+  const [activeTab, setActiveTab] = useState<
+    'konsep' | 'penggunaan' | 'glosarium'
+  >('konsep');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
 
@@ -136,6 +139,7 @@ export const GuidePage: React.FC = () => {
         })}
       </nav>
 
+      {/* TAB KONSEP DASAR */}
       {activeTab === 'konsep' && (
         <section style={{ display: 'grid', gap: '1.5rem' }}>
           <article style={cardStyle}>
@@ -187,14 +191,152 @@ export const GuidePage: React.FC = () => {
                 pergerakan head disk yang bolak-balik secara acak.
               </li>
               <li>
-                <strong>Mencegah Starvation:</strong> Memastikan seluruh
-                antrean permintaan terlayani secara adil.
+                <strong>Mencegah Starvation:</strong> Membantu menjelaskan
+                bagaimana algoritma mengatur pelayanan antrean permintaan.
               </li>
             </ul>
+          </article>
+
+          <article style={cardStyle}>
+            <h3
+              style={{
+                fontSize: '1.25rem',
+                fontWeight: 'bold',
+                color: 'var(--color-text)',
+                marginBottom: '0.5rem',
+              }}
+            >
+              Metode Perhitungan Simulator
+            </h3>
+
+            <p style={textStyle}>
+              Simulator menggunakan beberapa metrik untuk menjelaskan kinerja
+              algoritma penjadwalan disk. Perhitungan yang digunakan adalah:
+            </p>
+
+            <ul
+              style={{
+                ...textStyle,
+                lineHeight: 1.8,
+                paddingLeft: '1.25rem',
+                marginTop: '0.75rem',
+              }}
+            >
+              <li>
+                <strong>Total Head Movement:</strong> Jumlah seluruh
+                perpindahan head. Setiap perpindahan dihitung menggunakan
+                selisih absolut antara posisi sebelumnya dan posisi tujuan.
+              </li>
+
+              <li>
+                <strong>Waiting Time:</strong> Selisih antara waktu mulai
+                perpindahan head menuju request dan waktu kedatangan request.
+              </li>
+
+              <li>
+                <strong>Turnaround Time:</strong> Selisih antara waktu request
+                selesai diproses dan waktu kedatangannya.
+              </li>
+
+              <li>
+                <strong>Response Time:</strong> Waktu dari kedatangan request
+                sampai perpindahan head menuju request tersebut dimulai.
+                Pada implementasi simulator saat ini, nilainya menggunakan
+                perhitungan yang sama dengan Waiting Time.
+              </li>
+
+              <li>
+                <strong>Throughput:</strong> Jumlah request yang berhasil
+                diselesaikan dibagi total waktu simulasi.
+              </li>
+
+              <li>
+                <strong>Service Time:</strong> Faktor pengali jarak perpindahan
+                head untuk menghitung waktu yang dibutuhkan. Semakin jauh
+                perpindahan, semakin lama waktu yang diperlukan.
+              </li>
+            </ul>
+
+            <p style={{ ...textStyle, marginTop: '1rem' }}>
+              <strong>Catatan:</strong> Total waktu simulasi juga dapat
+              memperhitungkan waktu tunggu ketika request belum tiba.
+              Oleh karena itu, hasil perhitungan dapat berbeda dari referensi
+              yang menggunakan asumsi atau rumus lain.
+            </p>
+          </article>
+
+          <article style={cardStyle}>
+            <h3
+              style={{
+                fontSize: '1.25rem',
+                fontWeight: 'bold',
+                color: 'var(--color-text)',
+                marginBottom: '0.5rem',
+              }}
+            >
+              Konvensi Pergerakan Head
+            </h3>
+
+            <p style={textStyle}>
+              Setiap algoritma memiliki aturan pergerakan head yang berbeda.
+              Simulator menerapkan aturan berikut:
+            </p>
+
+            <ul
+              style={{
+                ...textStyle,
+                lineHeight: 1.8,
+                paddingLeft: '1.25rem',
+                marginTop: '0.75rem',
+              }}
+            >
+              <li>
+                <strong>FCFS (First Come First Served):</strong> Request
+                diproses berdasarkan urutan kedatangannya.
+              </li>
+
+              <li>
+                <strong>SSTF (Shortest Seek Time First):</strong> Request
+                dengan jarak terdekat dari posisi head saat ini diproses lebih
+                dahulu.
+              </li>
+
+              <li>
+                <strong>SCAN:</strong> Head bergerak ke satu arah sampai batas
+                disk, kemudian berbalik arah untuk melayani request lainnya.
+              </li>
+
+              <li>
+                <strong>C-SCAN (Circular SCAN):</strong> Head bergerak ke satu
+                arah sampai batas disk, kemudian kembali ke ujung lainnya
+                untuk melanjutkan pelayanan dalam arah yang sama.
+              </li>
+
+              <li>
+                <strong>LOOK:</strong> Head bergerak ke satu arah sampai request
+                terjauh pada arah tersebut, kemudian berbalik arah tanpa harus
+                mencapai batas fisik disk.
+              </li>
+
+              <li>
+                <strong>C-LOOK (Circular LOOK):</strong> Head bergerak ke satu
+                arah sampai request terjauh, kemudian berpindah ke request
+                terjauh di sisi berlawanan dan melanjutkan arah yang sama.
+              </li>
+            </ul>
+
+            <p style={{ ...textStyle, marginTop: '1rem' }}>
+              <strong>Catatan:</strong> Pada simulator ini, perpindahan menuju
+              batas disk pada SCAN dan C-SCAN serta perpindahan melingkar pada
+              C-SCAN dan C-LOOK ikut dihitung sebagai Total Head Movement dan
+              menambah waktu simulasi. Oleh karena itu, hasil dapat berbeda
+              dari referensi yang tidak menghitung perpindahan tersebut.
+            </p>
           </article>
         </section>
       )}
 
+      {/* TAB CARA PENGGUNAAN */}
       {activeTab === 'penggunaan' && (
         <section style={{ display: 'grid', gap: '1rem' }}>
           {steps.map(item => (
@@ -249,6 +391,7 @@ export const GuidePage: React.FC = () => {
         </section>
       )}
 
+      {/* TAB GLOSARIUM */}
       {activeTab === 'glosarium' && (
         <section>
           <div
