@@ -70,14 +70,17 @@ export const ComparisonPage = () => {
     setComparisonResults([]);
     setHasCompared(false);
 
-    const head = Number(initialHead);
 
-    if (
-      initialHead.trim() === "" ||
-      !Number.isInteger(head) ||
-      head < 0 ||
-      head > 199
-    ) {
+    const headInput = initialHead.trim();
+
+    if (!/^-?\d+$/.test(headInput)) {
+      setError("Posisi awal head harus berupa bilangan bulat.");
+      return;
+    }
+
+    const head = Number(headInput);
+
+    if (head < 0 || head > 199) {
       setError("Posisi awal head harus berada dalam rentang 0–199.");
       return;
     }
@@ -88,21 +91,33 @@ export const ComparisonPage = () => {
 
     if (
       cylinderValues.length === 0 ||
-      cylinderValues.some(
-        (value) => value === "" || !Number.isInteger(Number(value)),
-      )
+      cylinderValues.some((value) => !/^-?\d+$/.test(value))
     ) {
-      setError("Masukkan antrean cylinder yang valid.");
+      setError("Masukkan antrean cylinder berupa bilangan bulat yang valid.");
       return;
     }
 
-    const requests: DiskRequest[] = cylinderValues.map(
-      (value, index) => ({
+    const cylinders = cylinderValues.map(Number);
+
+    const invalidCylinder = cylinders.find(
+      (cylinder) => cylinder < 0 || cylinder > 199,
+    );
+
+    if (invalidCylinder !== undefined) {
+      setError(
+        `Cylinder ${invalidCylinder} berada di luar rentang 0–199.`,
+      );
+      return;
+    }
+
+    const requests: DiskRequest[] = cylinders.map(
+      (cylinder, index) => ({
         id: `R${index + 1}`,
-        cylinder: Number(value),
+        cylinder,
         arrivalTime: 0,
       }),
     );
+
 
     const config: SimulationConfig = {
       ...defaultConfig,

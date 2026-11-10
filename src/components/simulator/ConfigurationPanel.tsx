@@ -1,3 +1,4 @@
+
 import type {
   AlgorithmId,
   DiskRequest,
@@ -67,13 +68,23 @@ export function ConfigurationPanel({
         </span>
         <input
           type="number"
+          min="1"
+          step="1"
           value={toInputValue(cylinderCount)}
-          onChange={(event) =>
+          onChange={(event) => {
+            const value = event.target.value.trim();
+            const count = Number(value);
+
             onConfigChange({
               ...config,
-              maxCylinder: Number(event.target.value) - 1,
-            })
-          }
+              maxCylinder:
+                !/^\d+$/.test(value) ||
+                !Number.isSafeInteger(count) ||
+                count < 1
+                  ? Number.NaN
+                  : count - 1,
+            });
+          }}
         />
       </label>
 
@@ -81,13 +92,22 @@ export function ConfigurationPanel({
         <span className="field-label">Posisi Head Awal</span>
         <input
           type="number"
+          min={config.minCylinder}
+          max={config.maxCylinder}
+          step="1"
           value={toInputValue(config.initialHead)}
-          onChange={(event) =>
+          onChange={(event) => {
+            const value = event.target.value.trim();
+            const head = Number(value);
+
             onConfigChange({
               ...config,
-              initialHead: Number(event.target.value),
-            })
-          }
+              initialHead:
+                !/^-?\d+$/.test(value) || !Number.isSafeInteger(head)
+                  ? Number.NaN
+                  : head,
+            });
+          }}
         />
       </label>
 
@@ -113,7 +133,12 @@ export function ConfigurationPanel({
         </label>
       </fieldset>
 
-      <RequestListEditor requests={requests} onChange={onRequestsChange} />
+      <RequestListEditor
+        requests={requests}
+        minCylinder={config.minCylinder}
+        maxCylinder={config.maxCylinder}
+        onChange={onRequestsChange}
+      />
 
       {errors.length > 0 && (
         <ul className="field-error-list" role="alert">
