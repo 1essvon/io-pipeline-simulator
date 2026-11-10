@@ -24,7 +24,10 @@ describe("validateConfig", () => {
   it("menolak posisi head di luar batas dan rentang cylinder tidak valid", () => {
     expect(
       validateConfig({ ...config, initialHead: 200 }).errors,
-    ).toContain("Posisi awal head harus berada dalam rentang cylinder.");
+    ).toContain(
+      "Posisi awal head harus berupa bilangan bulat dalam rentang 0–199.",
+    );
+
     expect(
       validateConfig({ ...config, minCylinder: 10, maxCylinder: 10 })
         .errors,
@@ -38,8 +41,9 @@ describe("validateConfig", () => {
   });
 
   it("menolak konfigurasi kosong", () => {
-    expect(validateConfig(undefined as unknown as SimulationConfig).valid)
-      .toBe(false);
+    expect(
+      validateConfig(undefined as unknown as SimulationConfig).valid,
+    ).toBe(false);
   });
 });
 
@@ -61,7 +65,7 @@ describe("validateRequests", () => {
 
     expect(validation.valid).toBe(false);
     expect(validation.errors).toContain(
-      'Cylinder request "R1" berada di luar rentang.',
+      "Cylinder 200 pada request ke-1 berada di luar rentang 0–199.",
     );
     expect(validation.errors).toContain(
       'Arrival time request "R1" tidak valid.',
@@ -109,6 +113,7 @@ describe("validateRequests", () => {
 
   it("menerima processId yang tidak diberikan atau berupa string non-kosong", () => {
     expect(validateRequests([request], config).valid).toBe(true);
+
     expect(
       validateRequests([{ ...request, processId: " P1 " }], config).valid,
     ).toBe(true);
@@ -144,8 +149,8 @@ describe("validateRequests", () => {
     },
   );
 
-  it.each([80.5, Number.NaN, -1, 200])(
-    "menolak cylinder bukan integer atau di luar rentang: %s",
+  it.each([80.5, Number.NaN])(
+    "menolak cylinder yang bukan integer: %s",
     (cylinder) => {
       const validation = validateRequests(
         [{ ...request, cylinder }],
@@ -154,7 +159,22 @@ describe("validateRequests", () => {
 
       expect(validation.valid).toBe(false);
       expect(validation.errors).toContain(
-        'Cylinder request "R1" berada di luar rentang.',
+        "Cylinder pada request ke-1 harus berupa bilangan bulat.",
+      );
+    },
+  );
+
+  it.each([-1, 200])(
+    "menolak cylinder di luar rentang: %s",
+    (cylinder) => {
+      const validation = validateRequests(
+        [{ ...request, cylinder }],
+        config,
+      );
+
+      expect(validation.valid).toBe(false);
+      expect(validation.errors).toContain(
+        `Cylinder ${cylinder} pada request ke-1 berada di luar rentang 0–199.`,
       );
     },
   );

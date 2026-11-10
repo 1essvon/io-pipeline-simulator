@@ -1,4 +1,3 @@
-
 import type { DiskRequest, SimulationConfig } from "../algorithms/types";
 
 export interface ValidationResult {
@@ -32,7 +31,9 @@ export function validateConfig(
     config.initialHead < config.minCylinder ||
     config.initialHead > config.maxCylinder
   ) {
-    errors.push("Posisi awal head harus berada dalam rentang cylinder.");
+    errors.push(
+      `Posisi awal head harus berupa bilangan bulat dalam rentang ${config.minCylinder}–${config.maxCylinder}.`,
+    );
   }
 
   if (!Number.isFinite(config.serviceTime) || config.serviceTime <= 0) {
@@ -93,14 +94,17 @@ export function validateRequests(
       seenIds.add(request.id.trim());
     }
 
-    if (
-      !Number.isInteger(request.cylinder) ||
-      (validCylinderRange &&
-        (request.cylinder < config.minCylinder ||
-          request.cylinder > config.maxCylinder))
+    if (!Number.isInteger(request.cylinder)) {
+      errors.push(
+        `Cylinder pada request ke-${index + 1} harus berupa bilangan bulat.`,
+      );
+    } else if (
+      validCylinderRange &&
+      (request.cylinder < config.minCylinder ||
+        request.cylinder > config.maxCylinder)
     ) {
       errors.push(
-        `Cylinder request "${request.id}" berada di luar rentang.`,
+        `Cylinder ${request.cylinder} pada request ke-${index + 1} berada di luar rentang ${config.minCylinder}–${config.maxCylinder}.`,
       );
     }
 
@@ -109,9 +113,7 @@ export function validateRequests(
       !Number.isFinite(request.arrivalTime) ||
       request.arrivalTime < 0
     ) {
-      errors.push(
-        `Arrival time request "${request.id}" tidak valid.`,
-      );
+      errors.push(`Arrival time request "${request.id}" tidak valid.`);
     }
 
     if (

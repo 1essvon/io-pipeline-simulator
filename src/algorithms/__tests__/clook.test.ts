@@ -205,7 +205,7 @@ describe("C-LOOK Algorithm", () => {
     expect(invalid.valid).toBe(false);
 
     expect(invalid.errors).toContain(
-      'Cylinder request "INVALID" berada di luar rentang.',
+      'Cylinder 200 pada request ke-1 berada di luar rentang 0–199.',
     );
   });
 });
