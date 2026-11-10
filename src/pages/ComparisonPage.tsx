@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import type {
   AlgorithmId,
@@ -54,7 +55,7 @@ const inputStyle = {
   marginTop: "8px",
 };
 
-export const ComparisonPage = () => {
+const ComparisonPage = () => {
   const [initialHead, setInitialHead] = useState("50");
   const [requestsInput, setRequestsInput] = useState(
     "82, 170, 43, 140, 24, 16, 190",
@@ -70,7 +71,6 @@ export const ComparisonPage = () => {
     setComparisonResults([]);
     setHasCompared(false);
 
-
     const headInput = initialHead.trim();
 
     if (!/^-?\d+$/.test(headInput)) {
@@ -80,7 +80,11 @@ export const ComparisonPage = () => {
 
     const head = Number(headInput);
 
-    if (head < 0 || head > 199) {
+    if (
+      !Number.isSafeInteger(head) ||
+      head < defaultConfig.minCylinder ||
+      head > defaultConfig.maxCylinder
+    ) {
       setError("Posisi awal head harus berada dalam rentang 0–199.");
       return;
     }
@@ -93,14 +97,23 @@ export const ComparisonPage = () => {
       cylinderValues.length === 0 ||
       cylinderValues.some((value) => !/^-?\d+$/.test(value))
     ) {
-      setError("Masukkan antrean cylinder berupa bilangan bulat yang valid.");
+      setError(
+        "Masukkan antrean cylinder berupa bilangan bulat yang valid.",
+      );
       return;
     }
 
     const cylinders = cylinderValues.map(Number);
 
+    if (cylinders.some((cylinder) => !Number.isSafeInteger(cylinder))) {
+      setError("Nomor cylinder terlalu besar atau tidak valid.");
+      return;
+    }
+
     const invalidCylinder = cylinders.find(
-      (cylinder) => cylinder < 0 || cylinder > 199,
+      (cylinder) =>
+        cylinder < defaultConfig.minCylinder ||
+        cylinder > defaultConfig.maxCylinder,
     );
 
     if (invalidCylinder !== undefined) {
@@ -118,7 +131,6 @@ export const ComparisonPage = () => {
       }),
     );
 
-
     const config: SimulationConfig = {
       ...defaultConfig,
       initialHead: head,
@@ -134,7 +146,9 @@ export const ComparisonPage = () => {
       });
 
       if (!output.success || !output.result) {
-        setError(`${algorithm}: ${output.errors.join(" ")}`);
+        setError(
+          `${algorithm}: ${output.errors.join(" ")}`,
+        );
         return;
       }
 
@@ -155,17 +169,24 @@ export const ComparisonPage = () => {
     setHasCompared(true);
   }
 
-  const bestResult = hasCompared
-    ? comparisonResults.reduce<ComparisonResult | null>(
-        (best, current) =>
-          !best ||
-          current.metrics.totalHeadMovement <
-            best.metrics.totalHeadMovement
-            ? current
-            : best,
-        null,
-      )
-    : null;
+  const bestMovement =
+    hasCompared && comparisonResults.length > 0
+      ? Math.min(
+          ...comparisonResults.map(
+            (item) => item.metrics.totalHeadMovement,
+          ),
+        )
+      : null;
+
+  const bestAlgorithms =
+    bestMovement === null
+      ? []
+      : comparisonResults
+          .filter(
+            (item) =>
+              item.metrics.totalHeadMovement === bestMovement,
+          )
+          .map((item) => item.algorithm);
 
   const maxMovement = Math.max(
     1,
@@ -213,7 +234,8 @@ export const ComparisonPage = () => {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(220px, 1fr))",
             gap: "20px",
           }}
         >
@@ -223,8 +245,11 @@ export const ComparisonPage = () => {
               type="number"
               min="0"
               max="199"
+              step="1"
               value={initialHead}
-              onChange={(event) => setInitialHead(event.target.value)}
+              onChange={(event) =>
+                setInitialHead(event.target.value)
+              }
               style={inputStyle}
             />
           </label>
@@ -234,7 +259,9 @@ export const ComparisonPage = () => {
             <textarea
               rows={3}
               value={requestsInput}
-              onChange={(event) => setRequestsInput(event.target.value)}
+              onChange={(event) =>
+                setRequestsInput(event.target.value)
+              }
               placeholder="82, 170, 43, 140, 24"
               style={{
                 ...inputStyle,
@@ -246,8 +273,8 @@ export const ComparisonPage = () => {
         </div>
 
         <p style={{ color: "var(--color-muted)", fontSize: "12px" }}>
-          Rentang cylinder: 0–199. Pisahkan nomor cylinder dengan koma.
-          Arah awal: up. Service time: 1.
+          Rentang cylinder: 0–199. Pisahkan nomor cylinder dengan
+          koma. Arah awal: up. Service time: 1.
         </p>
 
         <button
@@ -285,7 +312,7 @@ export const ComparisonPage = () => {
 
       {hasCompared && (
         <>
-          {bestResult && (
+          {bestMovement !== null && (
             <section
               style={{
                 backgroundColor: "var(--color-soft)",
@@ -299,18 +326,29 @@ export const ComparisonPage = () => {
               <p style={{ margin: 0, fontSize: "13px" }}>
                 HEAD MOVEMENT TERENDAH
               </p>
+
               <h2 style={{ margin: "8px 0" }}>
-                {bestResult.algorithm}
+                {bestAlgorithms.join(" & ")}
               </h2>
-              <strong>
-                {bestResult.metrics.totalHeadMovement} cylinder
-              </strong>
+
+              <strong>{bestMovement} cylinder</strong>
+
+              {bestAlgorithms.length > 1 && (
+                <p
+                  style={{
+                    color: "var(--color-muted)",
+                    fontSize: "13px",
+                    marginBottom: 0,
+                  }}
+                >
+                  Beberapa algoritma memperoleh hasil head
+                  movement terendah yang sama.
+                </p>
+              )}
             </section>
           )}
 
-          <section
-            style={{ ...panelStyle, overflowX: "auto" }}
-          >
+          <section style={{ ...panelStyle, overflowX: "auto" }}>
             <h2 style={{ fontSize: "19px" }}>
               Tabel perbandingan
             </h2>
@@ -339,7 +377,8 @@ export const ComparisonPage = () => {
                       key={heading}
                       style={{
                         padding: "12px",
-                        borderBottom: "1px solid var(--color-border)",
+                        borderBottom:
+                          "1px solid var(--color-border)",
                         color: "var(--color-text)",
                       }}
                     >
@@ -360,30 +399,79 @@ export const ComparisonPage = () => {
                     .map((step) => step.cylinder)
                     .join(" → ");
 
+                  const isBest =
+                    bestMovement !== null &&
+                    item.metrics.totalHeadMovement === bestMovement;
+
                   return (
-                    <tr key={item.algorithm}>
-                      <td style={{ padding: "12px", fontWeight: 700, borderBottom: "1px solid var(--color-border)" }}>
+                    <tr
+                      key={item.algorithm}
+                      style={{
+                        backgroundColor: isBest
+                          ? "var(--color-soft)"
+                          : "transparent",
+                      }}
+                    >
+                      <td
+                        style={{
+                          padding: "12px",
+                          fontWeight: 700,
+                          borderBottom:
+                            "1px solid var(--color-border)",
+                        }}
+                      >
                         {item.algorithm}
+                        {isBest ? " ★" : ""}
                       </td>
+
                       <td
                         style={{
                           padding: "12px",
                           fontFamily: "monospace",
-                          borderBottom: "1px solid var(--color-border)",
+                          borderBottom:
+                            "1px solid var(--color-border)",
                         }}
                       >
                         {order || "—"}
                       </td>
-                      <td style={{ padding: "12px", borderBottom: "1px solid var(--color-border)" }}>
+
+                      <td
+                        style={{
+                          padding: "12px",
+                          borderBottom:
+                            "1px solid var(--color-border)",
+                        }}
+                      >
                         {item.metrics.totalHeadMovement.toFixed(0)}
                       </td>
-                      <td style={{ padding: "12px", borderBottom: "1px solid var(--color-border)" }}>
+
+                      <td
+                        style={{
+                          padding: "12px",
+                          borderBottom:
+                            "1px solid var(--color-border)",
+                        }}
+                      >
                         {item.metrics.averageWaitingTime.toFixed(2)}
                       </td>
-                      <td style={{ padding: "12px", borderBottom: "1px solid var(--color-border)" }}>
+
+                      <td
+                        style={{
+                          padding: "12px",
+                          borderBottom:
+                            "1px solid var(--color-border)",
+                        }}
+                      >
                         {item.metrics.averageTurnaroundTime.toFixed(2)}
                       </td>
-                      <td style={{ padding: "12px", borderBottom: "1px solid var(--color-border)" }}>
+
+                      <td
+                        style={{
+                          padding: "12px",
+                          borderBottom:
+                            "1px solid var(--color-border)",
+                        }}
+                      >
                         {item.metrics.throughput.toFixed(3)}
                       </td>
                     </tr>
@@ -410,80 +498,73 @@ export const ComparisonPage = () => {
               }}
             >
               {comparisonResults.map((item) => {
-                const movement = item.metrics.totalHeadMovement;
+                const movement =
+                  item.metrics.totalHeadMovement;
                 const height = (movement / maxMovement) * 100;
                 const isBest =
-                  item.algorithm === bestResult?.algorithm;
+                  bestMovement !== null &&
+                  movement === bestMovement;
 
                 return (
                   <div
                     key={item.algorithm}
                     style={{
-                      flex: "1 0 65px",
-                      height: "100%",
+                      minWidth: "90px",
+                      flex: 1,
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
                       justifyContent: "flex-end",
-                      color: "var(--color-text)",
+                      height: "100%",
+                      gap: "8px",
                     }}
                   >
-                    <strong style={{ fontSize: "12px", marginBottom: 6 }}>
+                    <strong style={{ fontSize: "12px" }}>
                       {movement}
                     </strong>
 
                     <div
                       title={`${item.algorithm}: ${movement} cylinder`}
                       style={{
-                        width: "70%",
-                        maxWidth: "55px",
+                        width: "100%",
+                        maxWidth: "100px",
                         height: `${height}%`,
-                        minHeight: movement === 0 ? "2px" : "4px",
+                        minHeight: "4px",
+                        borderRadius: "6px 6px 0 0",
                         backgroundColor: isBest
                           ? "var(--color-pink)"
                           : "var(--color-navy)",
-                        borderRadius: "6px 6px 0 0",
-                        transition: "height 0.3s ease",
+                        opacity: isBest ? 1 : 0.7,
                       }}
                     />
 
                     <span
                       style={{
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        marginTop: "8px",
+                        fontSize: "12px",
+                        fontWeight: isBest ? 700 : 500,
                       }}
                     >
                       {item.algorithm}
+                      {isBest ? " ★" : ""}
                     </span>
                   </div>
                 );
               })}
             </div>
 
-            <p style={{ color: "var(--color-muted)", fontSize: "12px" }}>
-              Batang berwarna pink menunjukkan algoritma dengan
-              total head movement terendah.
+            <p
+              style={{
+                color: "var(--color-muted)",
+                fontSize: "12px",
+                marginBottom: 0,
+              }}
+            >
+              Batang bertanda ★ menunjukkan algoritma dengan head
+              movement terendah. Jika hasil seri, semua algoritma
+              dengan nilai minimum akan ditandai.
             </p>
           </section>
         </>
-      )}
-
-      {!hasCompared && !error && (
-        <section
-          style={{
-            ...panelStyle,
-            textAlign: "center",
-            padding: "40px 20px",
-            borderStyle: "dashed",
-          }}
-        >
-          <h3>Belum ada hasil perbandingan</h3>
-          <p style={{ color: "var(--color-muted)" }}>
-            Masukkan konfigurasi, lalu klik tombol Bandingkan Semua
-            Algoritma.
-          </p>
-        </section>
       )}
     </main>
   );

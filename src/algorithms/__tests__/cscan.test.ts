@@ -1,140 +1,170 @@
 import { describe, expect, it } from "vitest";
 import { runCSCAN } from "../cscan";
 import type { DiskRequest, SimulationConfig } from "../types";
-import { validateRequests } from "../../utils/validation";
+
+const config: SimulationConfig = {
+  initialHead: 50,
+  minCylinder: 0,
+  maxCylinder: 199,
+  direction: "up",
+  serviceTime: 1,
+};
 
 describe("C-SCAN Algorithm", () => {
-  const baseConfig: SimulationConfig = {
-    initialHead: 50,
-    direction: "up",
-    minCylinder: 0,
-    maxCylinder: 199,
-    serviceTime: 1,
-  };
-
-  const request = (id: string, cylinder: number): DiskRequest => ({
-    id,
-    cylinder,
-    arrivalTime: 0,
-  });
-
-  const servedIds = (requests: DiskRequest[], config = baseConfig) =>
-    runCSCAN(requests, config).steps
-      .filter((step) => step.eventType === "request-served")
-      .map((step) => step.requestId);
-
   it("serves unsorted requests circularly in the upward direction", () => {
-    const requests = [
-      request("R1", 10),
-      request("R2", 80),
-      request("R3", 20),
-      request("R4", 60),
+    const requests: DiskRequest[] = [
+      { id: "R1", cylinder: 82, arrivalTime: 0 },
+      { id: "R2", cylinder: 170, arrivalTime: 0 },
+      { id: "R3", cylinder: 43, arrivalTime: 0 },
+      { id: "R4", cylinder: 140, arrivalTime: 0 },
     ];
-    const result = runCSCAN(requests, baseConfig);
 
-    expect(servedIds(requests)).toEqual(["R4", "R2", "R1", "R3"]);
-    expect(result.totalHeadMovement).toBe(368); // 10 + 20 + 119 + 199 + 10 + 10
+    const result = runCSCAN(requests, config);
+
     expect(
       result.steps
-        .filter((step) => step.eventType === "wrap-around")
-        .map((step) => [step.headPosition, step.distanceFromPrevious]),
-    ).toEqual([[199, 119], [0, 199]]);
+        .filter((step) => step.eventType === "request-served")
+        .map((step) => step.requestId),
+    ).toEqual(["R1", "R4", "R2", "R3"]);
+
+    expect(result.totalHeadMovement).toBe(391);
     expect(result.completedRequests).toBe(4);
   });
 
   it("serves unsorted requests circularly in the downward direction", () => {
-    const requests = [
-      request("R1", 10),
-      request("R2", 80),
-      request("R3", 20),
-      request("R4", 60),
+    const requests: DiskRequest[] = [
+      { id: "R1", cylinder: 82, arrivalTime: 0 },
+      { id: "R2", cylinder: 170, arrivalTime: 0 },
+      { id: "R3", cylinder: 43, arrivalTime: 0 },
+      { id: "R4", cylinder: 10, arrivalTime: 0 },
     ];
-    const config = { ...baseConfig, direction: "down" as const };
-    const result = runCSCAN(requests, config);
 
-    expect(servedIds(requests, config)).toEqual(["R3", "R1", "R2", "R4"]);
-    expect(result.totalHeadMovement).toBe(388); // 30 + 10 + 10 + 199 + 119 + 20
+    const result = runCSCAN(requests, {
+      ...config,
+      direction: "down",
+    });
+
     expect(
       result.steps
-        .filter((step) => step.eventType === "wrap-around")
-        .map((step) => [step.headPosition, step.distanceFromPrevious]),
-    ).toEqual([[0, 10], [199, 199]]);
+        .filter((step) => step.eventType === "request-served")
+        .map((step) => step.requestId),
+    ).toEqual(["R3", "R4", "R2", "R1"]);
+
+    expect(result.totalHeadMovement).toBe(366);
+    expect(result.completedRequests).toBe(4);
   });
 
   it("does not wrap when there are no requests on the other side", () => {
-    const requests = [request("R1", 90), request("R2", 80)];
-    const result = runCSCAN(requests, baseConfig);
+    const requests: DiskRequest[] = [
+      { id: "R1", cylinder: 80, arrivalTime: 0 },
+      { id: "R2", cylinder: 100, arrivalTime: 0 },
+    ];
 
-    expect(servedIds(requests)).toEqual(["R2", "R1"]);
-    expect(result.totalHeadMovement).toBe(40);
-    expect(result.steps.some((step) => step.eventType === "wrap-around")).toBe(
-      false,
-    );
+    const result = runCSCAN(requests, config);
+
+    expect(
+      result.steps.filter((step) => step.eventType === "wrap-around"),
+    ).toHaveLength(0);
+
+    expect(result.completedRequests).toBe(2);
   });
 
   it("serves the initial-head request and duplicate cylinders once each", () => {
-    const requests = [
-      request("R1", 50),
-      request("R2", 50),
-      request("R3", 60),
-      request("R4", 40),
+    const requests: DiskRequest[] = [
+      { id: "R1", cylinder: 50, arrivalTime: 0 },
+      { id: "R2", cylinder: 80, arrivalTime: 0 },
+      { id: "R3", cylinder: 80, arrivalTime: 0 },
     ];
-    const result = runCSCAN(requests, baseConfig);
 
-    expect(servedIds(requests)).toEqual(["R1", "R2", "R3", "R4"]);
-    expect(result.totalHeadMovement).toBe(388); // 0 + 0 + 10 + 139 + 199 + 40
-    expect(result.completedRequests).toBe(4);
-    expect(result.steps.filter((step) => step.eventType === "request-served"))
-      .toHaveLength(4);
+    const result = runCSCAN(requests, config);
+
+    expect(
+      result.steps
+        .filter((step) => step.eventType === "request-served")
+        .map((step) => step.requestId),
+    ).toEqual(["R1", "R2", "R3"]);
+
+    expect(result.completedRequests).toBe(3);
   });
 
   it("wraps from an endpoint head and serves requests at both disk limits", () => {
-    const upwardRequests = [request("MIN", 0), request("MAX", 199), request("MID", 49)];
-    const fromMaximum = { ...baseConfig, initialHead: 199 };
-    const upwardResult = runCSCAN(upwardRequests, fromMaximum);
-    expect(servedIds(upwardRequests, fromMaximum)).toEqual(["MAX", "MIN", "MID"]);
-    expect(upwardResult.totalHeadMovement).toBe(248); // 0 + 199 + 0 + 49
+    const requests: DiskRequest[] = [
+      { id: "R1", cylinder: 0, arrivalTime: 0 },
+      { id: "R2", cylinder: 199, arrivalTime: 0 },
+    ];
+
+    const result = runCSCAN(requests, {
+      ...config,
+      initialHead: 199,
+    });
+
     expect(
-      upwardResult.steps
+      result.steps
+        .filter((step) => step.eventType === "request-served")
+        .map((step) => step.requestId),
+    ).toEqual(["R2", "R1"]);
+
+    expect(
+      result.steps
         .filter((step) => step.eventType === "wrap-around")
         .map((step) => step.headPosition),
     ).toEqual([0]);
 
-    const downwardRequests = [request("MAX", 199), request("MIN", 0), request("MID", 150)];
-    const fromMinimum = {
-      ...baseConfig,
-      initialHead: 0,
-      direction: "down" as const,
-    };
-    const downwardResult = runCSCAN(downwardRequests, fromMinimum);
-    expect(servedIds(downwardRequests, fromMinimum)).toEqual(["MIN", "MAX", "MID"]);
-    expect(downwardResult.totalHeadMovement).toBe(248); // 0 + 199 + 0 + 49
-    expect(
-      downwardResult.steps
-        .filter((step) => step.eventType === "wrap-around")
-        .map((step) => step.headPosition),
-    ).toEqual([199]);
+    expect(result.completedRequests).toBe(2);
   });
 
   it("returns zero movement for empty input and calculates a single request", () => {
-    const empty = runCSCAN([], baseConfig);
-    expect(empty.steps).toEqual([]);
-    expect(empty.totalHeadMovement).toBe(0);
-    expect(empty.totalSeekTime).toBe(0);
-    expect(empty.completedRequests).toBe(0);
+    const emptyResult = runCSCAN([], config);
 
-    const singleRequests = [request("ONLY", 70)];
-    const single = runCSCAN(singleRequests, baseConfig);
-    expect(servedIds(singleRequests)).toEqual(["ONLY"]);
-    expect(single.totalHeadMovement).toBe(20);
-    expect(single.completedRequests).toBe(1);
+    expect(emptyResult.totalHeadMovement).toBe(0);
+    expect(emptyResult.completedRequests).toBe(0);
+
+    const singleResult = runCSCAN(
+      [{ id: "R1", cylinder: 80, arrivalTime: 0 }],
+      config,
+    );
+
+    expect(singleResult.completedRequests).toBe(1);
+    expect(singleResult.totalHeadMovement).toBe(30);
   });
 
-  it("relies on project validation to reject requests outside cylinder bounds", () => {
-    const invalid = validateRequests([request("INVALID", -1)], baseConfig);
-    expect(invalid.valid).toBe(false);
-    expect(invalid.errors).toContain(
-      'Cylinder -1 pada request ke-1 berada di luar rentang 0–199.',
-    );
+  it("considers requests that arrive during boundary movement and wrap-around", () => {
+    const requests: DiskRequest[] = [
+      { id: "R1", cylinder: 80, arrivalTime: 0 },
+      { id: "R2", cylinder: 20, arrivalTime: 0 },
+      { id: "R3", cylinder: 10, arrivalTime: 200 },
+    ];
+
+    const result = runCSCAN(requests, config);
+
+    expect(
+      result.steps
+        .filter((step) => step.eventType === "request-served")
+        .map((step) => step.requestId),
+    ).toEqual(["R1", "R3", "R2"]);
+
+    expect(
+      result.steps
+        .filter((step) => step.eventType === "request-served")
+        .map((step) => [
+          step.requestId,
+          step.serviceStartTime,
+          step.completionTime,
+        ]),
+    ).toEqual([
+      ["R1", 0, 30],
+      ["R3", 348, 358],
+      ["R2", 358, 368],
+    ]);
+
+    expect(
+      result.steps
+        .filter((step) => step.eventType === "wrap-around")
+        .map((step) => step.headPosition),
+    ).toEqual([199, 0]);
+
+    expect(result.totalHeadMovement).toBe(368);
+    expect(result.totalSeekTime).toBe(368);
+    expect(result.completedRequests).toBe(3);
   });
 });

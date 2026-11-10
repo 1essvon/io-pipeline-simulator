@@ -1,3 +1,4 @@
+
 import type {
   DiskRequest,
   SimulationConfig,
@@ -9,63 +10,102 @@ export function runLOOK(
   requests: DiskRequest[],
   config: SimulationConfig,
 ): SimulationResult {
-  const atInitialHead = requests.filter(
-    (request) => request.cylinder === config.initialHead,
-  );
-  const ahead = requests
-    .filter((request) =>
-      config.direction === "up"
-        ? request.cylinder > config.initialHead
-        : request.cylinder < config.initialHead,
-    )
-    .sort((a, b) =>
-      config.direction === "up"
-        ? a.cylinder - b.cylinder
-        : b.cylinder - a.cylinder,
-    );
-  const remaining = requests
-    .filter((request) =>
-      config.direction === "up"
-        ? request.cylinder < config.initialHead
-        : request.cylinder > config.initialHead,
-    )
-    .sort((a, b) =>
-      config.direction === "up"
-        ? b.cylinder - a.cylinder
-        : a.cylinder - b.cylinder,
-    );
-  const orderedRequests = [...atInitialHead, ...ahead, ...remaining];
+  const pendingRequests = requests.map((request, index) => ({
+    request,
+    index,
+    completed: false,
+  }));
 
   const steps: SimulationStep[] = [];
+
   let headPosition = config.initialHead;
   let elapsedTime = 0;
   let totalHeadMovement = 0;
+  let direction = config.direction;
 
-  for (let index = 0; index < orderedRequests.length; index += 1) {
-    const request = orderedRequests[index];
+  while (pendingRequests.some((item) => !item.completed)) {
+    const availableRequests = pendingRequests.filter(
+      (item) =>
+        !item.completed &&
+        item.request.arrivalTime <= elapsedTime,
+    );
 
-    if (index === atInitialHead.length + ahead.length && remaining.length > 0) {
+    // Tunggu sampai request berikutnya tiba jika antrean kosong.
+    if (availableRequests.length === 0) {
+      const nextArrivalTime = Math.min(
+        ...pendingRequests
+          .filter((item) => !item.completed)
+          .map((item) => item.request.arrivalTime),
+      );
+
+      elapsedTime = Math.max(elapsedTime, nextArrivalTime);
+      continue;
+    }
+
+    // Cari request yang tersedia pada arah saat ini.
+    let directionalRequests = availableRequests.filter(
+      (item) =>
+        direction === "up"
+          ? item.request.cylinder >= headPosition
+          : item.request.cylinder <= headPosition,
+    );
+
+    // Jika tidak ada request pada arah saat ini,
+    // LOOK berbalik menuju request yang tersedia di sisi lain.
+    if (directionalRequests.length === 0) {
+      const previousDirection = direction;
+      direction = direction === "up" ? "down" : "up";
+
+      directionalRequests = availableRequests.filter(
+        (item) =>
+          direction === "up"
+            ? item.request.cylinder >= headPosition
+            : item.request.cylinder <= headPosition,
+      );
+
       steps.push({
         stepNumber: steps.length + 1,
         headPosition,
         distanceFromPrevious: 0,
         elapsedTime,
         eventType: "direction-change",
-        explanation: "LOOK mengubah arah setelah mencapai request terjauh.",
+        explanation: `LOOK mengubah arah dari ${previousDirection} ke ${direction} karena tidak ada request tersedia pada arah sebelumnya.`,
       });
     }
 
-    const distance = Math.abs(request.cylinder - headPosition);
-    totalHeadMovement += distance;
+    // Pilih request terdekat pada arah yang aktif.
+    directionalRequests.sort((a, b) => {
+      const distanceA = Math.abs(
+        a.request.cylinder - headPosition,
+      );
+      const distanceB = Math.abs(
+        b.request.cylinder - headPosition,
+      );
 
-    const serviceStartTime = Math.max(elapsedTime, request.arrivalTime);
+      return distanceA - distanceB || a.index - b.index;
+    });
+
+    const selectedRequest = directionalRequests[0];
+
+    if (!selectedRequest) {
+      continue;
+    }
+
+    const request = selectedRequest.request;
+    const distance = Math.abs(request.cylinder - headPosition);
+
+    const serviceStartTime = elapsedTime;
     const completionTime =
       serviceStartTime + distance * config.serviceTime;
+
+    totalHeadMovement += distance;
     elapsedTime = completionTime;
+    headPosition = request.cylinder;
+    selectedRequest.completed = true;
 
     steps.push({
       stepNumber: steps.length + 1,
-      headPosition: request.cylinder,
+      headPosition,
       requestId: request.id,
       cylinder: request.cylinder,
       distanceFromPrevious: distance,
@@ -73,10 +113,8 @@ export function runLOOK(
       serviceStartTime,
       completionTime,
       eventType: "request-served",
-      explanation: `LOOK melayani request ${request.id} sesuai arah pergerakan head.`,
+      explanation: `LOOK melayani request ${request.id} sesuai arah pergerakan head (${direction}).`,
     });
-
-    headPosition = request.cylinder;
   }
 
   return {
@@ -84,6 +122,8 @@ export function runLOOK(
     steps,
     totalHeadMovement,
     totalSeekTime: elapsedTime,
-    completedRequests: orderedRequests.length,
+    completedRequests: steps.filter(
+      (step) => step.eventType === "request-served",
+    ).length,
   };
 }

@@ -1,4 +1,3 @@
-
 import { describe, expect, it } from "vitest";
 import { runCLOOK } from "../clook";
 import type { DiskRequest, SimulationConfig } from "../types";
@@ -104,9 +103,7 @@ describe("C-LOOK Algorithm", () => {
     expect(result.totalHeadMovement).toBe(40);
 
     expect(
-      result.steps.some(
-        (step) => step.eventType === "wrap-around",
-      ),
+      result.steps.some((step) => step.eventType === "wrap-around"),
     ).toBe(false);
   });
 
@@ -182,14 +179,8 @@ describe("C-LOOK Algorithm", () => {
     expect(empty.totalSeekTime).toBe(0);
     expect(empty.completedRequests).toBe(0);
 
-    const singleRequests = [
-      request("ONLY", 70),
-    ];
-
-    const single = runCLOOK(
-      singleRequests,
-      baseConfig,
-    );
+    const singleRequests = [request("ONLY", 70)];
+    const single = runCLOOK(singleRequests, baseConfig);
 
     expect(servedIds(singleRequests)).toEqual(["ONLY"]);
     expect(single.totalHeadMovement).toBe(20);
@@ -205,7 +196,48 @@ describe("C-LOOK Algorithm", () => {
     expect(invalid.valid).toBe(false);
 
     expect(invalid.errors).toContain(
-      'Cylinder 200 pada request ke-1 berada di luar rentang 0–199.',
+      "Cylinder 200 pada request ke-1 berada di luar rentang 0–199.",
     );
+  });
+
+  it("considers requests arriving while the simulation is running", () => {
+    const requests: DiskRequest[] = [
+      { id: "R1", cylinder: 80, arrivalTime: 0 },
+      { id: "R2", cylinder: 60, arrivalTime: 100 },
+      { id: "R3", cylinder: 40, arrivalTime: 31 },
+    ];
+
+    const result = runCLOOK(requests, baseConfig);
+
+    const servedSteps = result.steps.filter(
+      (step) => step.eventType === "request-served",
+    );
+
+    expect(servedSteps.map((step) => step.requestId)).toEqual([
+      "R1",
+      "R3",
+      "R2",
+    ]);
+
+    expect(
+      servedSteps.map((step) => step.serviceStartTime),
+    ).toEqual([0, 71, 100]);
+
+    expect(
+      servedSteps.map((step) => step.completionTime),
+    ).toEqual([30, 71, 120]);
+
+    expect(
+      result.steps
+        .filter((step) => step.eventType === "wrap-around")
+        .map((step) => [
+          step.headPosition,
+          step.distanceFromPrevious,
+        ]),
+    ).toEqual([[40, 40]]);
+
+    expect(result.totalHeadMovement).toBe(90);
+    expect(result.totalSeekTime).toBe(120);
+    expect(result.completedRequests).toBe(3);
   });
 });
