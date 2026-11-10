@@ -117,7 +117,7 @@ https://io-pipeline-simulator.vercel.app/
 | 2 | Acep Haikal Fauzy - 257006111120 | MetricsPanel dan kerangka SimulatorPage (#1), serta UI halaman Simulator dan kontrol playback . |
 | 3 | Muhammad Ilyas Maulana - 257006111102 | Kontribusi implementasi Basic Disk Scheduling Algorithms: FCFS, SSTF, dan SCAN . |
 | 4 | Syahril Musthofa - 257006111099| Kontribusi integrasi algoritma C-SCAN, LOOK, dan C-LOOK . |
-| 5 | Nazwa Zahra Aulia - 257006111125| Halaman Comparison dan Guide . |
+| 5 | Nazwa Zahra Aulia - 257006111123| Halaman Comparison dan Guide . |
 | 6 | Kanisa Ayra Nabila - 257006111118 | Design System, Navbar, Beranda, dan halaman Belajar . |
 
 ## Repository
